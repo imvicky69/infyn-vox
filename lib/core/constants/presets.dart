@@ -1,0 +1,66 @@
+import '../../data/models/voice_persona.dart';
+
+class DefaultPresets {
+  static final List<VoicePersona> presets = [
+    VoicePersona(
+      id: "narrator_deep",
+      name: "David - Documentary Narrator",
+      gender: "Male",
+      language: "en",
+      controlInstruction: "A mature male voice, deep baritone, authoritative and calm, steady documentary cadence.",
+      avatar: "🎙️",
+      tags: ["Documentary", "Calm", "Male", "Deep"],
+      isPreset: true,
+    ),
+    VoicePersona(
+      id: "storyteller_gentle",
+      name: "Elena - Gentle Storyteller",
+      gender: "Female",
+      language: "en",
+      controlInstruction: "A warm young woman with a soft, gentle, and melodic voice. Speaks slowly with comforting emotion.",
+      avatar: "✨",
+      tags: ["Storybook", "Warm", "Female", "Comforting"],
+      isPreset: true,
+    ),
+    VoicePersona(
+      id: "host_energetic",
+      name: "Leo - Tech Podcast Host",
+      gender: "Male",
+      language: "en",
+      controlInstruction: "Energetic and enthusiastic young male, crisp articulation, friendly and modern tech host style.",
+      avatar: "🚀",
+      tags: ["Podcast", "Energetic", "Modern", "Male"],
+      isPreset: true,
+    ),
+    VoicePersona(
+      id: "assistant_clear",
+      name: "Aria - Smart Assistant",
+      gender: "Female",
+      language: "en",
+      controlInstruction: "Crystal clear young female voice, polite, professional, upbeat and helpful.",
+      avatar: "💡",
+      tags: ["Assistant", "Professional", "Female", "Clear"],
+      isPreset: true,
+    ),
+    VoicePersona(
+      id: "mandarin_gentle",
+      name: "Xiao Ya - 温柔女声",
+      gender: "Female",
+      language: "zh",
+      controlInstruction: "年轻女性，声音温柔甜美，语速平缓自然，富有亲和力。",
+      avatar: "🌸",
+      tags: ["Chinese", "Gentle", "Female"],
+      isPreset: true,
+    ),
+    VoicePersona(
+      id: "anime_hero",
+      name: "Kenji - Anime Protagonist",
+      gender: "Male",
+      language: "ja",
+      controlInstruction: "Young energetic male voice, determined, emotional, dramatic anime protagonist tone.",
+      avatar: "⚡",
+      tags: ["Anime", "Dramatic", "Male", "Japanese"],
+      isPreset: true,
+    ),
+  ];
+}
