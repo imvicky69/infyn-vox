@@ -91,6 +91,7 @@ class _MainLayoutState extends State<MainLayout> {
           // Persistent Studio Bottom Audio Dock
           StudioDock(
             audioService: _audioService,
+            apiService: _apiService,
             trackTitle: _currentResult?.text != null
                 ? (_currentResult!.text.length > 35
                     ? "${_currentResult!.text.substring(0, 35)}..."

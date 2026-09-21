@@ -95,4 +95,17 @@ class TTSApiService {
     } catch (_) {}
     return "";
   }
+
+  Future<List<int>> convertAudio(String sourceWavPath, String targetFormat) async {
+    final uri = Uri.parse('$baseUrl/v1/audio/convert?format=$targetFormat');
+    final request = http.MultipartRequest('POST', uri);
+    request.files.add(await http.MultipartFile.fromPath('file', sourceWavPath));
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      throw Exception("Conversion to $targetFormat failed: ${response.body}");
+    }
+  }
 }

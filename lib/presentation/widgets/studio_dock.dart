@@ -4,10 +4,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/services/audio_service.dart';
+import '../../data/services/tts_api_service.dart';
 import 'waveform_visualizer.dart';
 
 class StudioDock extends StatefulWidget {
   final AudioService audioService;
+  final TTSApiService? apiService;
   final String? trackTitle;
   final String? subtitle;
   final VoidCallback? onExport;
@@ -15,6 +17,7 @@ class StudioDock extends StatefulWidget {
   const StudioDock({
     super.key,
     required this.audioService,
+    this.apiService,
     this.trackTitle,
     this.subtitle,
     this.onExport,
@@ -52,7 +55,9 @@ class _StudioDockState extends State<StudioDock> {
     return "$minutes:$seconds.$ms";
   }
 
-  Future<void> _handleSaveAs() async {
+  bool _isExporting = false;
+
+  Future<void> _handleExport(String format) async {
     final path = widget.audioService.currentAudioPath;
     if (path == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -61,24 +66,47 @@ class _StudioDockState extends State<StudioDock> {
       return;
     }
 
+    final ext = format.toLowerCase().trim();
     final savePath = await FilePicker.platform.saveFile(
-      dialogTitle: "Save 48kHz WAV Audio",
-      fileName: "voxcpm_audio_48khz.wav",
+      dialogTitle: "Export Audio as ${ext.toUpperCase()}",
+      fileName: "voxcpm_speech.$ext",
       type: FileType.custom,
-      allowedExtensions: ['wav'],
+      allowedExtensions: [ext],
     );
 
-    if (savePath != null) {
-      final source = File(path);
-      await source.copy(savePath);
+    if (savePath == null) return;
+
+    setState(() => _isExporting = true);
+
+    try {
+      if (ext == 'wav') {
+        final source = File(path);
+        await source.copy(savePath);
+      } else {
+        final api = widget.apiService ?? TTSApiService();
+        final bytes = await api.convertAudio(path, ext);
+        await File(savePath).writeAsBytes(bytes);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppTheme.surfaceLight,
-            content: Text("Exported audio successfully to $savePath"),
+            content: Text("Exported ${ext.toUpperCase()} successfully to $savePath"),
           ),
         );
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppTheme.accent,
+            content: Text("Export failed: $e"),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
     }
   }
 
@@ -304,16 +332,110 @@ class _StudioDockState extends State<StudioDock> {
 
               const SizedBox(width: 10),
 
-              // Export Button
-              ElevatedButton.icon(
-                onPressed: hasAudio ? _handleSaveAs : null,
-                icon: const Icon(Icons.download, size: 16),
-                label: const Text("Export WAV", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              // Multi-format Export Split Button
+              Container(
+                decoration: BoxDecoration(
+                  color: hasAudio ? AppTheme.primary : AppTheme.surfaceLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTap: (hasAudio && !_isExporting) ? () => _handleExport('mp3') : null,
+                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_isExporting)
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            else
+                              const Icon(Icons.download, size: 16, color: Colors.white),
+                            const SizedBox(width: 6),
+                            Text(
+                              _isExporting ? "Converting..." : "Export MP3",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: hasAudio ? Colors.white : AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 22,
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    PopupMenuButton<String>(
+                      enabled: hasAudio && !_isExporting,
+                      tooltip: "More Export Formats",
+                      color: AppTheme.surfaceLight,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: const BorderSide(color: AppTheme.surfaceBorder),
+                      ),
+                      onSelected: (fmt) => _handleExport(fmt),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: "mp3",
+                          child: Row(
+                            children: [
+                              Icon(Icons.music_note, size: 16, color: AppTheme.secondary),
+                              SizedBox(width: 8),
+                              Text("MP3 (Universal format)"),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: "wav",
+                          child: Row(
+                            children: [
+                              Icon(Icons.graphic_eq, size: 16, color: AppTheme.primaryLight),
+                              SizedBox(width: 8),
+                              Text("WAV (48kHz Lossless Studio)"),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: "flac",
+                          child: Row(
+                            children: [
+                              Icon(Icons.album, size: 16, color: AppTheme.success),
+                              SizedBox(width: 8),
+                              Text("FLAC (Lossless compressed)"),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: "ogg",
+                          child: Row(
+                            children: [
+                              Icon(Icons.podcasts, size: 16, color: AppTheme.warning),
+                              SizedBox(width: 8),
+                              Text("OGG (Vorbis audio)"),
+                            ],
+                          ),
+                        ),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                        child: Icon(
+                          Icons.arrow_drop_down,
+                          color: hasAudio ? Colors.white : AppTheme.textMuted,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

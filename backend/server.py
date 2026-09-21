@@ -324,6 +324,36 @@ async def transcribe_audio(file: UploadFile = File(...)):
         "duration": 4.5
     }
 
+@app.post("/v1/audio/convert")
+async def convert_audio(
+    file: UploadFile = File(...),
+    format: str = Query("mp3", description="Target audio format: mp3, wav, flac, ogg")
+):
+    """Converts audio to requested format (MP3, FLAC, OGG, WAV) using soundfile."""
+    fmt = format.upper().strip()
+    if fmt not in ["MP3", "WAV", "FLAC", "OGG"]:
+        raise HTTPException(status_code=400, detail=f"Unsupported format '{format}'. Supported: mp3, wav, flac, ogg")
+    
+    content = await file.read()
+    in_buf = io.BytesIO(content)
+    data, sr = sf.read(in_buf)
+    
+    out_buf = io.BytesIO()
+    sf.write(out_buf, data, sr, format=fmt)
+    out_buf.seek(0)
+    
+    media_types = {
+        "MP3": "audio/mpeg",
+        "WAV": "audio/wav",
+        "FLAC": "audio/flac",
+        "OGG": "audio/ogg",
+    }
+    
+    headers = {
+        "Content-Disposition": f"attachment; filename=audio.{format.lower()}"
+    }
+    return Response(content=out_buf.read(), media_type=media_types.get(fmt, "application/octet-stream"), headers=headers)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="VoxCPM2 Studio API Server")
     parser.add_argument("--host", default="0.0.0.0", help="Host address")
