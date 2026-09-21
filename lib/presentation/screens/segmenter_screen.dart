@@ -69,6 +69,7 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
         mode: _selectedVoice.promptText != null ? 'ultimate' : 'design',
         cfgValue: 2.0,
         inferenceTimesteps: 10,
+        language: _selectedVoice.language,
       );
 
       final result = await widget.apiService.generateSpeech(req);

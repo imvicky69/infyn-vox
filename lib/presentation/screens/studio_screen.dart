@@ -98,6 +98,7 @@ class _StudioScreenState extends State<StudioScreen> {
         seed: _randomSeed ? Random().nextInt(100000) : _manualSeed,
         denoise: _denoise,
         normalize: _normalize,
+        language: _selectedLanguageCode,
       );
 
       final result = await widget.apiService.generateSpeech(req, voiceName: _selectedPersona.name);

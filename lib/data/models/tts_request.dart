@@ -10,6 +10,7 @@ class TTSRequest {
   final bool denoise;
   final bool normalize;
   final bool returnTimestamps;
+  final String? language;
 
   TTSRequest({
     required this.text,
@@ -23,6 +24,7 @@ class TTSRequest {
     this.denoise = false,
     this.normalize = true,
     this.returnTimestamps = false,
+    this.language,
   });
 
   Map<String, dynamic> toJson() => {
@@ -37,5 +39,6 @@ class TTSRequest {
     'denoise': denoise,
     'normalize': normalize,
     'return_timestamps': returnTimestamps,
+    'language': language,
   };
 }

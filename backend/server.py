@@ -87,6 +87,7 @@ class TTSGenerateRequest(BaseModel):
     denoise: bool = Field(False, description="Apply ZipEnhancer denoising to reference")
     normalize: bool = Field(True, description="Apply WeText normalization")
     return_timestamps: bool = Field(False, description="Generate word/char timestamps")
+    language: Optional[str] = Field(None, description="Language code (e.g. en, hi, zh, es, ja)")
 
 class OpenAITTSRequest(BaseModel):
     model: str = "openbmb/VoxCPM2"
@@ -108,51 +109,139 @@ def get_model():
             logger.error(f"Failed to load VoxCPM model: {e}")
     return model_instance
 
-def pick_voice_from_instruction(instruction: Optional[str]) -> str:
-    """Intelligently map voice design instructions to realistic neural vocal timbre."""
-    if not instruction:
-        return "en-US-AriaNeural"
-    
-    ci = instruction.lower()
-    # Check for specific languages
-    if "chinese" in ci or "女声" in ci or "普通话" in ci or "温柔" in ci:
-        return "zh-CN-XiaoxiaoNeural"
-    if "cantonese" in ci or "粤语" in ci:
-        return "zh-HK-HiuGaaiNeural"
-    if "japanese" in ci or "anime" in ci:
-        return "ja-JP-KeitaNeural" if "male" in ci else "ja-JP-NanamiNeural"
-    if "hindi" in ci or "हिन्दी" in ci:
-        return "hi-IN-MadhurNeural" if "male" in ci else "hi-IN-SwaraNeural"
-    if "spanish" in ci or "español" in ci:
-        return "es-ES-AlvaroNeural" if "male" in ci else "es-ES-ElviraNeural"
-    if "french" in ci or "français" in ci:
-        return "fr-FR-HenriNeural" if "male" in ci else "fr-FR-DeniseNeural"
-    if "german" in ci or "deutsch" in ci:
-        return "de-DE-ConradNeural" if "male" in ci else "de-DE-KatjaNeural"
-    
-    # English voice characteristics
-    if "male" in ci or "deep" in ci or "baritone" in ci or "documentary" in ci or "david" in ci:
-        return "en-US-ChristopherNeural"
-    if "energetic" in ci or "podcast" in ci or "tech" in ci or "host" in ci or "leo" in ci:
-        return "en-US-GuyNeural"
-    if "warm" in ci or "soft" in ci or "gentle" in ci or "story" in ci or "elena" in ci:
-        return "en-US-JennyNeural"
-    if "british" in ci or "uk" in ci:
-        return "en-GB-RyanNeural" if "male" in ci else "en-GB-SoniaNeural"
-    if "australian" in ci or "aussie" in ci:
-        return "en-AU-WilliamNeural" if "male" in ci else "en-AU-NatashaNeural"
-        
-    return "en-US-AriaNeural"
+# 30-Language Neural Voice Matrix (Female, Male)
+LANGUAGE_VOICE_MAP: Dict[str, Dict[str, str]] = {
+    "en": {"female": "en-US-AriaNeural", "male": "en-US-ChristopherNeural"},
+    "hi": {"female": "hi-IN-SwaraNeural", "male": "hi-IN-MadhurNeural"},
+    "zh": {"female": "zh-CN-XiaoxiaoNeural", "male": "zh-CN-YunxiNeural"},
+    "zh-yue": {"female": "zh-HK-HiuGaaiNeural", "male": "zh-HK-WanLungNeural"},
+    "zh-sc": {"female": "zh-CN-XiaoxiaoNeural", "male": "zh-CN-YunxiNeural"},
+    "es": {"female": "es-ES-ElviraNeural", "male": "es-ES-AlvaroNeural"},
+    "fr": {"female": "fr-FR-DeniseNeural", "male": "fr-FR-HenriNeural"},
+    "de": {"female": "de-DE-KatjaNeural", "male": "de-DE-ConradNeural"},
+    "ja": {"female": "ja-JP-NanamiNeural", "male": "ja-JP-KeitaNeural"},
+    "ko": {"female": "ko-KR-SunHiNeural", "male": "ko-KR-InJoonNeural"},
+    "ru": {"female": "ru-RU-SvetlanaNeural", "male": "ru-RU-DmitryNeural"},
+    "ar": {"female": "ar-SA-ZariyahNeural", "male": "ar-SA-HamedNeural"},
+    "pt": {"female": "pt-BR-FranciscaNeural", "male": "pt-BR-AntonioNeural"},
+    "it": {"female": "it-IT-ElsaNeural", "male": "it-IT-DiegoNeural"},
+    "nl": {"female": "nl-NL-FennaNeural", "male": "nl-NL-MaartenNeural"},
+    "pl": {"female": "pl-PL-ZofiaNeural", "male": "pl-PL-MarekNeural"},
+    "tr": {"female": "tr-TR-EmelNeural", "male": "tr-TR-AhmetNeural"},
+    "id": {"female": "id-ID-GadisNeural", "male": "id-ID-ArdiNeural"},
+    "vi": {"female": "vi-VN-HoaiMyNeural", "male": "vi-VN-NamMinhNeural"},
+    "th": {"female": "th-TH-PremwadeeNeural", "male": "th-TH-NiwatNeural"},
+    "sv": {"female": "sv-SE-SofieNeural", "male": "sv-SE-MattiasNeural"},
+    "da": {"female": "da-DK-ChristelNeural", "male": "da-DK-JeppeNeural"},
+    "fi": {"female": "fi-FI-NooraNeural", "male": "fi-FI-HarriNeural"},
+    "no": {"female": "nb-NO-PernilleNeural", "male": "nb-NO-FinnNeural"},
+    "el": {"female": "el-GR-AthinaNeural", "male": "el-GR-NestorasNeural"},
+    "he": {"female": "he-IL-HilaNeural", "male": "he-IL-AvriNeural"},
+    "ms": {"female": "ms-MY-YasminNeural", "male": "ms-MY-OsmanNeural"},
+    "tl": {"female": "fil-PH-BlessicaNeural", "male": "fil-PH-AngeloNeural"},
+    "sw": {"female": "sw-KE-ZuriNeural", "male": "sw-KE-RafikiNeural"},
+}
 
-async def generate_neural_speech(text: str, control_instruction: Optional[str] = None, target_sr: int = 48000) -> np.ndarray:
+def detect_script_language(text: str) -> Optional[str]:
+    """Auto-detects the alphabet/script of the input text to ensure zero mismatch errors."""
+    for char in text:
+        cp = ord(char)
+        if 0x0900 <= cp <= 0x097F: # Devanagari (Hindi, Marathi, Bhojpuri)
+            return "hi"
+        if 0x0600 <= cp <= 0x06FF or 0x0750 <= cp <= 0x077F: # Arabic, Urdu
+            return "ar"
+        if 0x3040 <= cp <= 0x30FF: # Japanese Hiragana / Katakana
+            return "ja"
+        if 0x4E00 <= cp <= 0x9FFF or 0x3400 <= cp <= 0x4DBF: # Chinese Hanzi
+            return "zh"
+        if 0xAC00 <= cp <= 0xD7AF or 0x1100 <= cp <= 0x11FF: # Korean Hangul
+            return "ko"
+        if 0x0400 <= cp <= 0x04FF: # Cyrillic (Russian)
+            return "ru"
+        if 0x0E00 <= cp <= 0x0E7F: # Thai
+            return "th"
+        if 0x0370 <= cp <= 0x03FF: # Greek
+            return "el"
+        if 0x0590 <= cp <= 0x05FF: # Hebrew
+            return "he"
+    return None
+
+def pick_voice_from_instruction(
+    instruction: Optional[str] = None,
+    language: Optional[str] = None,
+    text: str = ""
+) -> str:
+    """Intelligently map text script, language tag, and voice design instructions to realistic neural voice."""
+    # Step 1: Detect script from text characters (e.g. Devanagari text MUST use Hindi voice)
+    script_lang = detect_script_language(text)
+    
+    # Target language code
+    target_lang = script_lang or (language if language and language != "auto" else None)
+    
+    # Determine gender
+    is_male = False
+    if instruction:
+        ci = instruction.lower()
+        if any(w in ci for w in ["male", "deep", "baritone", "david", "guy", "leo", "man", "boy", "kenji"]):
+            is_male = True
+            
+    # If we have a target language
+    if target_lang and target_lang in LANGUAGE_VOICE_MAP:
+        v_pair = LANGUAGE_VOICE_MAP[target_lang]
+        return v_pair["male"] if is_male else v_pair["female"]
+
+    # Step 2: Check keywords in instruction
+    if instruction:
+        ci = instruction.lower()
+        if "chinese" in ci or "女声" in ci or "普通话" in ci or "温柔" in ci:
+            return "zh-CN-XiaoxiaoNeural"
+        if "cantonese" in ci or "粤语" in ci:
+            return "zh-HK-HiuGaaiNeural"
+        if "japanese" in ci or "anime" in ci:
+            return "ja-JP-KeitaNeural" if is_male else "ja-JP-NanamiNeural"
+        if "hindi" in ci or "हिन्दी" in ci:
+            return "hi-IN-MadhurNeural" if is_male else "hi-IN-SwaraNeural"
+        if "spanish" in ci or "español" in ci:
+            return "es-ES-AlvaroNeural" if is_male else "es-ES-ElviraNeural"
+        if "french" in ci or "français" in ci:
+            return "fr-FR-HenriNeural" if is_male else "fr-FR-DeniseNeural"
+        if "german" in ci or "deutsch" in ci:
+            return "de-DE-ConradNeural" if is_male else "de-DE-KatjaNeural"
+        if "british" in ci or "uk" in ci:
+            return "en-GB-RyanNeural" if is_male else "en-GB-SoniaNeural"
+        if "australian" in ci or "aussie" in ci:
+            return "en-AU-WilliamNeural" if is_male else "en-AU-NatashaNeural"
+        if "energetic" in ci or "podcast" in ci or "host" in ci:
+            return "en-US-GuyNeural"
+        if "warm" in ci or "soft" in ci or "gentle" in ci or "story" in ci:
+            return "en-US-JennyNeural"
+        if is_male:
+            return "en-US-ChristopherNeural"
+
+    return "en-US-ChristopherNeural" if is_male else "en-US-AriaNeural"
+
+async def generate_neural_speech(
+    text: str,
+    control_instruction: Optional[str] = None,
+    language: Optional[str] = None,
+    target_sr: int = 48000
+) -> np.ndarray:
     """Synthesizes human-grade natural speech and master-resamples to 48kHz studio audio."""
-    voice = pick_voice_from_instruction(control_instruction)
-    logger.info(f"Synthesizing with neural voice: {voice}")
+    voice = pick_voice_from_instruction(control_instruction, language, text)
+    logger.info(f"Synthesizing with neural voice: {voice} (lang: {language}, text: '{text[:25]}...')")
     
     temp_path = TEMP_DIR / f"speech_{uuid.uuid4().hex}.mp3"
     try:
-        communicate = edge_tts.Communicate(text, voice)
-        await communicate.save(str(temp_path))
+        try:
+            communicate = edge_tts.Communicate(text, voice)
+            await communicate.save(str(temp_path))
+        except Exception as primary_err:
+            logger.warning(f"Voice {voice} failed: {primary_err}. Attempting auto-detected fallback...")
+            # Detect script and fallback to safe regional voice
+            fallback_lang = detect_script_language(text) or "en"
+            fallback_voice = LANGUAGE_VOICE_MAP.get(fallback_lang, {}).get("female", "en-US-AriaNeural")
+            communicate = edge_tts.Communicate(text, fallback_voice)
+            await communicate.save(str(temp_path))
         
         data, sr = sf.read(str(temp_path))
         if len(data.shape) > 1:
@@ -280,10 +369,10 @@ async def generate_speech(req: TTSGenerateRequest):
             sample_rate = getattr(model.tts_model, "sample_rate", 48000)
         except Exception as e:
             logger.error(f"VoxCPM model generation error: {e}. Using high-fidelity neural speech.")
-            wav = await generate_neural_speech(req.text, req.control_instruction, sample_rate)
+            wav = await generate_neural_speech(req.text, req.control_instruction, language=req.language, target_sr=sample_rate)
     else:
         # High-Fidelity 48kHz Neural Speech Engine
-        wav = await generate_neural_speech(req.text, req.control_instruction, sample_rate)
+        wav = await generate_neural_speech(req.text, req.control_instruction, language=req.language, target_sr=sample_rate)
     
     # Save to in-memory WAV buffer
     buf = io.BytesIO()
