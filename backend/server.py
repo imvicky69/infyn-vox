@@ -72,8 +72,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TEMP_DIR = Path("./temp_audio")
-TEMP_DIR.mkdir(parents=True, exist_ok=True)
+import tempfile
+
+def _get_temp_dir() -> Path:
+    """Returns a guaranteed writable temp audio directory regardless of invocation CWD."""
+    # 1. Try directory adjacent to server.py
+    try:
+        cand = Path(__file__).resolve().parent / "temp_audio"
+        cand.mkdir(parents=True, exist_ok=True)
+        test_file = cand / f".write_test_{os.getpid()}"
+        test_file.touch()
+        test_file.unlink(missing_ok=True)
+        return cand
+    except Exception:
+        pass
+
+    # 2. Fall back to user OS temp directory (always writable without admin rights)
+    user_temp = Path(tempfile.gettempdir()) / "infyn_vox_temp_audio"
+    user_temp.mkdir(parents=True, exist_ok=True)
+    return user_temp
+
+TEMP_DIR = _get_temp_dir()
 
 class TTSGenerateRequest(BaseModel):
     text: str = Field(..., description="Target text to synthesize")

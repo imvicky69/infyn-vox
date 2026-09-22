@@ -37,29 +37,41 @@ class SidecarService {
     _logs.clear();
 
     try {
-      // Find server.py script inside the app's backend directory
+      final exeDir = File(Platform.resolvedExecutable).parent.path;
+      final currentDir = Directory.current.path;
+
+      // Search robustly in installation directories and dev trees
       final possiblePaths = [
+        '$exeDir/backend/server.py',
+        '$exeDir/server.py',
+        '$currentDir/backend/server.py',
         'backend/server.py',
         './backend/server.py',
         'c:/Users/rajvi/Repo/Apps/vox_studio/backend/server.py',
-        'server.py',
       ];
 
-      String? scriptPath;
+      File? scriptFile;
       for (final p in possiblePaths) {
-        if (await File(p).exists()) {
-          scriptPath = p;
+        final f = File(p);
+        if (await f.exists()) {
+          scriptFile = f.absolute;
           break;
         }
       }
 
-      if (scriptPath == null) {
-        throw Exception("Could not find server.py script path.");
+      if (scriptFile == null) {
+        throw Exception("Could not find server.py script path in application directories.");
       }
+
+      _logs.add("[INFO] Launching Python backend from: ${scriptFile.path}");
+
+      // Explicitly set working directory to backend folder to guarantee write permissions
+      final workingDir = scriptFile.parent.path;
 
       _process = await Process.start(
         'python',
-        [scriptPath, '--host', host, '--port', port.toString()],
+        [scriptFile.path, '--host', host, '--port', port.toString()],
+        workingDirectory: workingDir,
         runInShell: true,
       );
 
