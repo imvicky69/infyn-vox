@@ -1,17 +1,41 @@
-# vox_studio
+# infyn Vox
 
-A new Flutter project.
+Professional 48kHz Multilingual Speech Synthesis & Desktop Audio Workstation.
 
-## Getting Started
+Built with Flutter Desktop (Windows) and high-performance neural TTS backend engines.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## Key Highlights
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- **48kHz Pristine Speech Synthesis**: Ultra-clear, natural acoustic delivery across 30+ global languages with true-to-life prosody and nuance.
+- **Voice Vault & Persona Design**: Curated presets and custom voice design workflows with instant zero-shot timbres.
+- **Smart Long-Form Segmenter**: Breaks down large scripts and articles into semantic segments with automated pause insertion, chunk stitching, and aligned SRT subtitle exports.
+- **Saved Audio Library**: Persistent recording library with search, inline playback synced with the studio dock, individual format exports, and one-click **Export All** with structured JSON manifests.
+- **Modern Monochrome Interface**: Swiss-inspired minimal monochrome design with `#3B82F6` Electric Blue accents, dynamic Light/Dark theme switching, and official Geist typography.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## Quick Start
+
+### 1. Start the Backend Server
+
+```bash
+cd backend
+pip install -r requirements.txt
+python server.py --host 127.0.0.1 --port 8808
+```
+
+### 2. Launch the Desktop App
+
+```bash
+flutter pub get
+flutter run -d windows
+```
+
+---
+
+## Architecture
+
+- **Frontend**: Flutter Desktop Windows, Geist typography, custom title bar, scrubbable waveform visualizer, and non-destructive tab state preservation.
+- **Backend**: Python 3.12 FastAPI server, async neural Edge-TTS provider with custom prosody modulation and acoustic timbre styling.

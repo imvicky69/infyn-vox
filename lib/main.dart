@@ -17,7 +17,7 @@ void main() async {
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.hidden,
-      title: "VoxStudio PC - VoxCPM2 48kHz TTS",
+      title: "infyn Vox - 48kHz Studio",
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -38,7 +38,7 @@ class VoxStudioApp extends StatelessWidget {
       valueListenable: AppTheme.themeModeNotifier,
       builder: (context, themeMode, _) {
         return MaterialApp(
-          title: 'VoxStudio PC',
+          title: 'infyn Vox',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

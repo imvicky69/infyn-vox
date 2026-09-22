@@ -58,7 +58,7 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      "VoxStudio PC",
+                      "infyn Vox",
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

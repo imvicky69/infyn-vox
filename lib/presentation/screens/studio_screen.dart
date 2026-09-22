@@ -128,7 +128,7 @@ class _StudioScreenState extends State<StudioScreen> {
 
   void _loadSampleText() {
     setState(() {
-      _textController.text = "Welcome to VoxStudio PC. Experience pristine 48kHz speech synthesis with fluid prosody, true-to-life emotion, and seamless multilingual generation across thirty global languages.";
+      _textController.text = "Welcome to infyn Vox. Experience pristine 48kHz speech synthesis with fluid prosody, true-to-life emotion, and seamless multilingual generation across thirty global languages.";
     });
   }
 

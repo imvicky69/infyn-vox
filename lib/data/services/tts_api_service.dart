@@ -58,7 +58,7 @@ class TTSApiService {
 
     // Save audio bytes to local application directory
     final appDir = await getApplicationDocumentsDirectory();
-    final outputDir = Directory('${appDir.path}/VoxStudio/Outputs');
+    final outputDir = Directory('${appDir.path}/InfynVox/Outputs');
     if (!await outputDir.exists()) {
       await outputDir.create(recursive: true);
     }

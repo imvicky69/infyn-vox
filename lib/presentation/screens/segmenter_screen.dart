@@ -32,7 +32,7 @@ class SegmenterScreen extends StatefulWidget {
 
 class _SegmenterScreenState extends State<SegmenterScreen> {
   final _inputController = TextEditingController(
-    text: "Welcome to VoxStudio's Long-Form Speech Synthesizer. In large language audio models, generating very long continuous text often leads to acoustic drift or prosodic degradation.\n\nTo overcome this limitation, our Smart Segmenter breaks down articles, stories, or podcast scripts into semantic sentences. Each segment is synthesized individually with consistent acoustic embeddings.\n\nFinally, all high-resolution 48kHz audio chunks are seamlessly stitched together with natural pause intervals, and an aligned SRT subtitle file is generated automatically.",
+    text: "Welcome to infyn Vox Long-Form Synthesizer. In large language audio models, generating very long continuous text often leads to acoustic drift or prosodic degradation.\n\nTo overcome this limitation, our Smart Segmenter breaks down articles, stories, or podcast scripts into semantic sentences. Each segment is synthesized individually with consistent acoustic embeddings.\n\nFinally, all high-resolution 48kHz audio chunks are seamlessly stitched together with natural pause intervals, and an aligned SRT subtitle file is generated automatically.",
   );
 
   final SegmenterService _segmenterService = SegmenterService();

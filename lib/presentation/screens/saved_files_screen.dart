@@ -58,7 +58,7 @@ class _SavedFilesScreenState extends State<SavedFilesScreen> {
     try {
       int successCount = 0;
       final manifestLines = <String>[
-        "# VoxStudio PC - Export Manifest",
+        "# infyn Vox - Export Manifest",
         "# Exported: ${DateTime.now().toIso8601String()}",
         "# Total Tracks: ${widget.savedResults.length}",
         "",
