@@ -4,6 +4,8 @@
 *.pyc
 *.swp
 .DS_Store
+Thumbs.db
+ehthumbs.db
 .atom/
 .build/
 .buildlog/
@@ -11,6 +13,27 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+venv/
+ENV/
+env/
+
+# Audio outputs & Temporary Media
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aac
+*.srt
+temp_audio/
+*.temp
 
 # IntelliJ related
 *.iml

@@ -91,8 +91,8 @@ class _StudioDockState extends State<StudioDock> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppTheme.surfaceLight,
-            content: Text("Exported ${ext.toUpperCase()} successfully to $savePath"),
+            backgroundColor: AppTheme.cardLight(context),
+            content: Text("Exported ${ext.toUpperCase()} successfully to $savePath", style: TextStyle(color: AppTheme.text(context))),
           ),
         );
       }
@@ -119,12 +119,12 @@ class _StudioDockState extends State<StudioDock> {
       height: 96,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
-        border: const Border(top: BorderSide(color: AppTheme.surfaceBorder, width: 1)),
+        color: AppTheme.cardBg(context),
+        border: Border(top: BorderSide(color: AppTheme.border(context), width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 20,
+            color: Colors.black.withOpacity(AppTheme.isDark(context) ? 0.35 : 0.06),
+            blurRadius: 16,
             offset: const Offset(0, -4),
           ),
         ],
@@ -140,12 +140,12 @@ class _StudioDockState extends State<StudioDock> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceLight,
+                    color: AppTheme.cardLight(context),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.surfaceBorder),
+                    border: Border.all(color: AppTheme.border(context)),
                   ),
                   child: const Center(
-                    child: Icon(Icons.music_note, color: AppTheme.secondary, size: 22),
+                    child: Icon(Icons.music_note, color: AppTheme.primary, size: 22),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -158,10 +158,10 @@ class _StudioDockState extends State<StudioDock> {
                         widget.trackTitle ?? "No Audio Generated",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.text(context),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -170,12 +170,12 @@ class _StudioDockState extends State<StudioDock> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
-                              color: AppTheme.secondary.withOpacity(0.15),
+                              color: AppTheme.primary.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(3),
                             ),
                             child: const Text(
                               "48 kHz",
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.secondary),
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.primary),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -184,7 +184,7 @@ class _StudioDockState extends State<StudioDock> {
                               widget.subtitle ?? "Studio Quality",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                              style: TextStyle(fontSize: 11, color: AppTheme.textSub(context)),
                             ),
                           ),
                         ],
@@ -214,15 +214,12 @@ class _StudioDockState extends State<StudioDock> {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          gradient: hasAudio
-                              ? const LinearGradient(colors: [AppTheme.primary, AppTheme.secondary])
-                              : null,
-                          color: hasAudio ? null : AppTheme.surfaceLight,
+                          color: hasAudio ? AppTheme.primary : AppTheme.cardLight(context),
                           shape: BoxShape.circle,
                           boxShadow: hasAudio
                               ? [
                                   BoxShadow(
-                                    color: AppTheme.primary.withOpacity(0.4),
+                                    color: AppTheme.primary.withOpacity(0.35),
                                     blurRadius: 10,
                                     spreadRadius: 1,
                                   ),
@@ -231,7 +228,7 @@ class _StudioDockState extends State<StudioDock> {
                         ),
                         child: Icon(
                           isPlaying ? Icons.pause : Icons.play_arrow,
-                          color: hasAudio ? Colors.white : AppTheme.textMuted,
+                          color: hasAudio ? Colors.white : AppTheme.textSub(context),
                           size: 22,
                         ),
                       ),
@@ -241,10 +238,10 @@ class _StudioDockState extends State<StudioDock> {
                     // Timestamp
                     Text(
                       _formatDuration(_position),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSub(context),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -263,10 +260,10 @@ class _StudioDockState extends State<StudioDock> {
                     const SizedBox(width: 10),
                     Text(
                       _formatDuration(_duration),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
-                        color: AppTheme.textMuted,
+                        color: AppTheme.textSub(context),
                       ),
                     ),
                   ],
@@ -285,10 +282,10 @@ class _StudioDockState extends State<StudioDock> {
               PopupMenuButton<double>(
                 initialValue: _playbackSpeed,
                 tooltip: "Playback Speed",
-                color: AppTheme.surfaceLight,
+                color: AppTheme.cardBg(context),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: const BorderSide(color: AppTheme.surfaceBorder),
+                  side: BorderSide(color: AppTheme.border(context)),
                 ),
                 onSelected: (val) {
                   setState(() => _playbackSpeed = val);
@@ -304,13 +301,13 @@ class _StudioDockState extends State<StudioDock> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceLight,
+                    color: AppTheme.cardLight(context),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.surfaceBorder),
+                    border: Border.all(color: AppTheme.border(context)),
                   ),
                   child: Text(
                     "${_playbackSpeed}x",
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.text(context)),
                   ),
                 ),
               ),
@@ -318,11 +315,12 @@ class _StudioDockState extends State<StudioDock> {
               const SizedBox(width: 12),
 
               // Volume Icon & Slider
-              const Icon(Icons.volume_up, size: 18, color: AppTheme.textSecondary),
+              Icon(Icons.volume_up, size: 18, color: AppTheme.textSub(context)),
               SizedBox(
                 width: 70,
                 child: Slider(
                   value: _volume,
+                  activeColor: AppTheme.primary,
                   onChanged: (val) {
                     setState(() => _volume = val);
                     widget.audioService.setVolume(val);
@@ -335,7 +333,7 @@ class _StudioDockState extends State<StudioDock> {
               // Multi-format Export Split Button
               Container(
                 decoration: BoxDecoration(
-                  color: hasAudio ? AppTheme.primary : AppTheme.surfaceLight,
+                  color: hasAudio ? AppTheme.primary : AppTheme.cardLight(context),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -356,14 +354,14 @@ class _StudioDockState extends State<StudioDock> {
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
                             else
-                              const Icon(Icons.download, size: 16, color: Colors.white),
+                              Icon(Icons.download, size: 16, color: hasAudio ? Colors.white : AppTheme.textSub(context)),
                             const SizedBox(width: 6),
                             Text(
                               _isExporting ? "Converting..." : "Export MP3",
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: hasAudio ? Colors.white : AppTheme.textMuted,
+                                color: hasAudio ? Colors.white : AppTheme.textSub(context),
                               ),
                             ),
                           ],
@@ -373,15 +371,15 @@ class _StudioDockState extends State<StudioDock> {
                     Container(
                       width: 1,
                       height: 22,
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: hasAudio ? Colors.white.withOpacity(0.2) : AppTheme.border(context),
                     ),
                     PopupMenuButton<String>(
                       enabled: hasAudio && !_isExporting,
                       tooltip: "More Export Formats",
-                      color: AppTheme.surfaceLight,
+                      color: AppTheme.cardBg(context),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
-                        side: const BorderSide(color: AppTheme.surfaceBorder),
+                        side: BorderSide(color: AppTheme.border(context)),
                       ),
                       onSelected: (fmt) => _handleExport(fmt),
                       itemBuilder: (context) => [
@@ -389,7 +387,7 @@ class _StudioDockState extends State<StudioDock> {
                           value: "mp3",
                           child: Row(
                             children: [
-                              Icon(Icons.music_note, size: 16, color: AppTheme.secondary),
+                              Icon(Icons.music_note, size: 16, color: AppTheme.primary),
                               SizedBox(width: 8),
                               Text("MP3 (Universal format)"),
                             ],
@@ -399,7 +397,7 @@ class _StudioDockState extends State<StudioDock> {
                           value: "wav",
                           child: Row(
                             children: [
-                              Icon(Icons.graphic_eq, size: 16, color: AppTheme.primaryLight),
+                              Icon(Icons.graphic_eq, size: 16, color: AppTheme.primary),
                               SizedBox(width: 8),
                               Text("WAV (48kHz Lossless Studio)"),
                             ],
@@ -409,7 +407,7 @@ class _StudioDockState extends State<StudioDock> {
                           value: "flac",
                           child: Row(
                             children: [
-                              Icon(Icons.album, size: 16, color: AppTheme.success),
+                              Icon(Icons.album, size: 16, color: AppTheme.primary),
                               SizedBox(width: 8),
                               Text("FLAC (Lossless compressed)"),
                             ],
@@ -419,7 +417,7 @@ class _StudioDockState extends State<StudioDock> {
                           value: "ogg",
                           child: Row(
                             children: [
-                              Icon(Icons.podcasts, size: 16, color: AppTheme.warning),
+                              Icon(Icons.podcasts, size: 16, color: AppTheme.primary),
                               SizedBox(width: 8),
                               Text("OGG (Vorbis audio)"),
                             ],
@@ -430,7 +428,7 @@ class _StudioDockState extends State<StudioDock> {
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                         child: Icon(
                           Icons.arrow_drop_down,
-                          color: hasAudio ? Colors.white : AppTheme.textMuted,
+                          color: hasAudio ? Colors.white : AppTheme.textSub(context),
                           size: 18,
                         ),
                       ),

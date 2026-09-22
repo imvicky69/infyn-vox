@@ -9,6 +9,7 @@ import '../../data/models/generation_result.dart';
 import '../../data/services/tts_api_service.dart';
 import '../../data/services/audio_service.dart';
 import '../widgets/clone_modal.dart';
+import '../widgets/voice_selector_modal.dart';
 
 class StudioScreen extends StatefulWidget {
   final TTSApiService apiService;
@@ -155,20 +156,20 @@ class _StudioScreenState extends State<StudioScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppTheme.surface,
+                          color: AppTheme.cardBg(context),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppTheme.surfaceBorder),
+                          border: Border.all(color: AppTheme.border(context)),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _selectedLanguageCode,
-                            dropdownColor: AppTheme.surfaceLight,
+                            dropdownColor: AppTheme.cardBg(context),
                             items: SupportedLanguages.list.map((lang) {
                               return DropdownMenuItem(
                                 value: lang.code,
                                 child: Text(
                                   "${lang.flag}  ${lang.name}",
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.textPrimary),
+                                  style: TextStyle(fontSize: 12, color: AppTheme.text(context)),
                                 ),
                               );
                             }).toList(),
@@ -181,24 +182,24 @@ class _StudioScreenState extends State<StudioScreen> {
                       const SizedBox(width: 12),
 
                       // Quick Stats Pills
-                      _buildStatPill(Icons.short_text, "$_wordCount words"),
+                      _buildStatPill(context, Icons.short_text, "$_wordCount words"),
                       const SizedBox(width: 8),
-                      _buildStatPill(Icons.text_fields, "$_charCount chars"),
+                      _buildStatPill(context, Icons.text_fields, "$_charCount chars"),
                       const SizedBox(width: 8),
-                      _buildStatPill(Icons.timer_outlined, "~$_estimatedDuration reading"),
+                      _buildStatPill(context, Icons.timer_outlined, "~$_estimatedDuration reading"),
 
                       const SizedBox(width: 24),
 
                       // Action Buttons
                       TextButton.icon(
                         onPressed: _loadSampleText,
-                        icon: const Icon(Icons.auto_awesome, size: 14, color: AppTheme.secondary),
-                        label: const Text("Sample", style: TextStyle(fontSize: 12, color: AppTheme.secondary)),
+                        icon: const Icon(Icons.auto_awesome, size: 14, color: AppTheme.primary),
+                        label: const Text("Sample", style: TextStyle(fontSize: 12, color: AppTheme.primary)),
                       ),
                       TextButton.icon(
                         onPressed: () => _textController.clear(),
-                        icon: const Icon(Icons.clear_all, size: 14, color: AppTheme.textMuted),
-                        label: const Text("Clear", style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                        icon: Icon(Icons.clear_all, size: 14, color: AppTheme.textSub(context)),
+                        label: Text("Clear", style: TextStyle(fontSize: 12, color: AppTheme.textSub(context))),
                       ),
                     ],
                   ),
@@ -209,20 +210,24 @@ class _StudioScreenState extends State<StudioScreen> {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: AppTheme.glassCard(),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBg(context),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.border(context)),
+                    ),
                     child: TextField(
                       controller: _textController,
                       maxLines: null,
                       expands: true,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         height: 1.6,
-                        color: AppTheme.textPrimary,
+                        color: AppTheme.text(context),
                         letterSpacing: 0.2,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: "Enter or paste your text to synthesize with VoxCPM2...\n\nPro-tip: For voice design mode, you can also prepend descriptions like:\n(Young woman, gentle and sweet voice) Hello world!",
-                        hintStyle: TextStyle(fontSize: 14, color: AppTheme.textMuted),
+                        hintStyle: TextStyle(fontSize: 14, color: AppTheme.textSub(context)),
                         border: InputBorder.none,
                       ),
                       onChanged: (_) => setState(() {}),
@@ -239,9 +244,9 @@ class _StudioScreenState extends State<StudioScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppTheme.surfaceLight,
+                            color: AppTheme.cardLight(context),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppTheme.surfaceBorder),
+                            border: Border.all(color: AppTheme.border(context)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -253,7 +258,7 @@ class _StudioScreenState extends State<StudioScreen> {
                                   "RTF: ${_lastResult!.rtf.toStringAsFixed(2)}x  •  ${_lastResult!.duration.toStringAsFixed(1)}s audio  •  ${_lastResult!.sampleRate}Hz",
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                                  style: TextStyle(fontSize: 11, color: AppTheme.textSub(context)),
                                 ),
                               ),
                             ],
@@ -293,8 +298,8 @@ class _StudioScreenState extends State<StudioScreen> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 6,
-                        shadowColor: AppTheme.primary.withOpacity(0.5),
+                        elevation: 4,
+                        shadowColor: AppTheme.primary.withOpacity(0.3),
                       ),
                     ),
                   ],
@@ -315,7 +320,11 @@ class _StudioScreenState extends State<StudioScreen> {
                   // Selected Voice Persona Card
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: AppTheme.glassCard(),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBg(context),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.border(context)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -325,9 +334,9 @@ class _StudioScreenState extends State<StudioScreen> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: AppTheme.surfaceLight,
+                                color: AppTheme.cardLight(context),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppTheme.surfaceBorder),
+                                border: Border.all(color: AppTheme.border(context)),
                               ),
                               child: Center(
                                 child: Text(_selectedPersona.avatar, style: const TextStyle(fontSize: 22)),
@@ -342,14 +351,14 @@ class _StudioScreenState extends State<StudioScreen> {
                                     _selectedPersona.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     _selectedPersona.tags.join(" • "),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                    style: TextStyle(fontSize: 11, color: AppTheme.textSub(context)),
                                   ),
                                 ],
                               ),
@@ -361,7 +370,7 @@ class _StudioScreenState extends State<StudioScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.surfaceLight.withOpacity(0.6),
+                            color: AppTheme.cardLight(context),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -370,7 +379,7 @@ class _StudioScreenState extends State<StudioScreen> {
                                 : "Standard voice synthesis mode",
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                            style: TextStyle(fontSize: 11, color: AppTheme.textSub(context), fontStyle: FontStyle.italic),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -379,12 +388,19 @@ class _StudioScreenState extends State<StudioScreen> {
                           children: [
                             Expanded(
                               child: OutlinedButton.icon(
-                                onPressed: () => _showVoicePicker(allPersonas),
+                                onPressed: () {
+                                  VoiceSelectorModal.show(
+                                    context,
+                                    personas: allPersonas,
+                                    selectedPersona: _selectedPersona,
+                                    onSelect: (p) => setState(() => _selectedPersona = p),
+                                  );
+                                },
                                 icon: const Icon(Icons.people_outline, size: 14),
                                 label: const Text("Change Voice", style: TextStyle(fontSize: 11)),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppTheme.textPrimary,
-                                  side: const BorderSide(color: AppTheme.surfaceBorder),
+                                  foregroundColor: AppTheme.text(context),
+                                  side: BorderSide(color: AppTheme.border(context)),
                                 ),
                               ),
                             ),
@@ -403,9 +419,9 @@ class _StudioScreenState extends State<StudioScreen> {
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.add, size: 18, color: AppTheme.secondary),
+                              icon: const Icon(Icons.add, size: 18, color: AppTheme.primary),
                               style: IconButton.styleFrom(
-                                backgroundColor: AppTheme.surfaceLight,
+                                backgroundColor: AppTheme.cardLight(context),
                               ),
                             ),
                           ],
@@ -419,13 +435,17 @@ class _StudioScreenState extends State<StudioScreen> {
                   // Diffusion Hyperparameters Box
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: AppTheme.glassCard(),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBg(context),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.border(context)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           "LocDiT Flow-Matching Settings",
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textSub(context)),
                         ),
                         const SizedBox(height: 14),
 
@@ -433,8 +453,8 @@ class _StudioScreenState extends State<StudioScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("CFG Guidance Scale", style: TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
-                            Text(_cfgValue.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondary)),
+                            Text("CFG Guidance Scale", style: TextStyle(fontSize: 12, color: AppTheme.text(context))),
+                            Text(_cfgValue.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primary)),
                           ],
                         ),
                         Slider(
@@ -442,11 +462,12 @@ class _StudioScreenState extends State<StudioScreen> {
                           min: 1.0,
                           max: 4.0,
                           divisions: 30,
+                          activeColor: AppTheme.primary,
                           onChanged: (val) => setState(() => _cfgValue = val),
                         ),
-                        const Text(
+                        Text(
                           "Higher = strictly adheres to prompt/reference. Lower = more creative variation.",
-                          style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                          style: TextStyle(fontSize: 10, color: AppTheme.textSub(context)),
                         ),
 
                         const SizedBox(height: 14),
@@ -455,8 +476,8 @@ class _StudioScreenState extends State<StudioScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("DiT Flow Steps", style: TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
-                            Text("$_inferenceTimesteps steps", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondary)),
+                            Text("DiT Flow Steps", style: TextStyle(fontSize: 12, color: AppTheme.text(context))),
+                            Text("$_inferenceTimesteps steps", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primary)),
                           ],
                         ),
                         Slider(
@@ -464,11 +485,12 @@ class _StudioScreenState extends State<StudioScreen> {
                           min: 4,
                           max: 25,
                           divisions: 21,
+                          activeColor: AppTheme.primary,
                           onChanged: (val) => setState(() => _inferenceTimesteps = val.toInt()),
                         ),
-                        const Text(
+                        Text(
                           "Recommended: 10 steps for optimal speed vs studio audio fidelity.",
-                          style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                          style: TextStyle(fontSize: 10, color: AppTheme.textSub(context)),
                         ),
 
                         const SizedBox(height: 14),
@@ -476,7 +498,7 @@ class _StudioScreenState extends State<StudioScreen> {
                         // Seed Settings
                         Row(
                           children: [
-                            const Text("Random Seed", style: TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
+                            Text("Random Seed", style: TextStyle(fontSize: 12, color: AppTheme.text(context))),
                             const Spacer(),
                             Switch(
                               value: _randomSeed,
@@ -486,23 +508,23 @@ class _StudioScreenState extends State<StudioScreen> {
                           ],
                         ),
 
-                        const Divider(color: AppTheme.surfaceBorder, height: 24),
+                        Divider(color: AppTheme.border(context), height: 24),
 
                         // Toggles: Denoise & Normalize
                         Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text("Text Normalization", style: TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
-                                  Text("WeText processing for numbers and dates", style: TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                                  Text("Text Normalization", style: TextStyle(fontSize: 12, color: AppTheme.text(context))),
+                                  Text("WeText processing for numbers and dates", style: TextStyle(fontSize: 10, color: AppTheme.textSub(context))),
                                 ],
                               ),
                             ),
                             Switch(
                               value: _normalize,
-                              activeColor: AppTheme.secondary,
+                              activeColor: AppTheme.primary,
                               onChanged: (val) => setState(() => _normalize = val),
                             ),
                           ],
@@ -510,12 +532,12 @@ class _StudioScreenState extends State<StudioScreen> {
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text("ZipEnhancer Denoising", style: TextStyle(fontSize: 12, color: AppTheme.textPrimary)),
-                                  Text("Clean background noise from reference clip", style: TextStyle(fontSize: 10, color: AppTheme.textMuted)),
+                                  Text("Clean background noise from reference clip", style: TextStyle(fontSize: 10, color: AppTheme.textSub(context))),
                                 ],
                               ),
                             ),
@@ -538,62 +560,21 @@ class _StudioScreenState extends State<StudioScreen> {
     );
   }
 
-  Widget _buildStatPill(IconData icon, String text) {
+  Widget _buildStatPill(BuildContext context, IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceLight,
+        color: AppTheme.cardLight(context),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppTheme.textMuted),
+          Icon(icon, size: 12, color: AppTheme.textSub(context)),
           const SizedBox(width: 5),
-          Text(text, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+          Text(text, style: TextStyle(fontSize: 11, color: AppTheme.textSub(context))),
         ],
       ),
-    );
-  }
-
-  void _showVoicePicker(List<VoicePersona> personas) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Select Voice Persona", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: personas.length,
-                  itemBuilder: (ctx, idx) {
-                    final p = personas[idx];
-                    final isSelected = p.id == _selectedPersona.id;
-                    return ListTile(
-                      leading: Text(p.avatar, style: const TextStyle(fontSize: 22)),
-                      title: Text(p.name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: AppTheme.textPrimary)),
-                      subtitle: Text(p.controlInstruction, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                      trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primary) : null,
-                      onTap: () {
-                        setState(() => _selectedPersona = p);
-                        Navigator.of(ctx).pop();
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

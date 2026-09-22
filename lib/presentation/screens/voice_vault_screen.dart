@@ -48,16 +48,16 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
             children: [
               const Icon(Icons.folder_shared_outlined, color: AppTheme.primary, size: 24),
               const SizedBox(width: 12),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     "Voice Vault & Persona Library",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                   ),
                   Text(
                     "Manage your custom cloned timbres and curated 48kHz voice design presets",
-                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                   ),
                 ],
               ),
@@ -98,15 +98,15 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
                 child: FilterChip(
                   label: Text(category),
                   selected: isSelected,
-                  backgroundColor: AppTheme.surfaceLight,
-                  selectedColor: AppTheme.primary.withOpacity(0.2),
+                  backgroundColor: AppTheme.cardLight(context),
+                  selectedColor: AppTheme.primary.withOpacity(0.15),
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? AppTheme.primaryLight : AppTheme.textSecondary,
+                    color: isSelected ? AppTheme.primary : AppTheme.textSub(context),
                   ),
                   side: BorderSide(
-                    color: isSelected ? AppTheme.primary : AppTheme.surfaceBorder,
+                    color: isSelected ? AppTheme.primary : AppTheme.border(context),
                   ),
                   onSelected: (_) => setState(() => _filter = category),
                 ),
@@ -139,7 +139,11 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
   Widget _buildPersonaCard(VoicePersona p) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: AppTheme.glassCard(),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.border(context)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -149,9 +153,9 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceLight,
+                  color: AppTheme.cardLight(context),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.surfaceBorder),
+                  border: Border.all(color: AppTheme.border(context)),
                 ),
                 child: Center(
                   child: Text(p.avatar, style: const TextStyle(fontSize: 22)),
@@ -166,7 +170,7 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
                       p.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -174,24 +178,22 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
-                            color: p.isPreset 
-                                ? AppTheme.secondary.withOpacity(0.15) 
-                                : AppTheme.primary.withOpacity(0.15),
+                            color: AppTheme.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Text(
                             p.isPreset ? "Preset" : "Custom Clone",
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
-                              color: p.isPreset ? AppTheme.secondary : AppTheme.primaryLight,
+                              color: AppTheme.primary,
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
                         Text(
                           p.gender,
-                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                          style: TextStyle(fontSize: 11, color: AppTheme.textSub(context)),
                         ),
                       ],
                     ),
@@ -200,7 +202,7 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
               ),
               if (!p.isPreset) ...[
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 16, color: AppTheme.textMuted),
+                  icon: Icon(Icons.delete_outline, size: 16, color: AppTheme.textSub(context)),
                   onPressed: () => widget.onDeletePersona(p.id),
                   tooltip: "Delete Voice",
                 ),
@@ -214,7 +216,7 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
               p.controlInstruction.isNotEmpty ? p.controlInstruction : "Reference audio continuation voice.",
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, height: 1.4, color: AppTheme.textSecondary),
+              style: TextStyle(fontSize: 11, height: 1.4, color: AppTheme.textSub(context)),
             ),
           ),
           const SizedBox(height: 8),
@@ -226,12 +228,12 @@ class _VoiceVaultScreenState extends State<VoiceVaultScreen> {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceLight,
+                  color: AppTheme.cardLight(context),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   tag,
-                  style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                  style: TextStyle(fontSize: 10, color: AppTheme.textSub(context)),
                 ),
               );
             }).toList(),

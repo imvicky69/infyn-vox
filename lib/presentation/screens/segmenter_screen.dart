@@ -6,20 +6,24 @@ import '../../core/constants/presets.dart';
 import '../../data/models/voice_persona.dart';
 import '../../data/models/text_segment.dart';
 import '../../data/models/tts_request.dart';
+import '../../data/models/generation_result.dart';
 import '../../data/services/tts_api_service.dart';
 import '../../data/services/segmenter_service.dart';
 import '../../data/services/audio_service.dart';
+import '../widgets/voice_selector_modal.dart';
 
 class SegmenterScreen extends StatefulWidget {
   final TTSApiService apiService;
   final AudioService audioService;
   final List<VoicePersona> userPersonas;
+  final Function(GenerationResult)? onAudioGenerated;
 
   const SegmenterScreen({
     super.key,
     required this.apiService,
     required this.audioService,
     required this.userPersonas,
+    this.onAudioGenerated,
   });
 
   @override
@@ -81,6 +85,7 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
         seg.audioPath = result.audioPath;
         seg.duration = result.duration;
       });
+      widget.onAudioGenerated?.call(result);
     } catch (e) {
       setState(() {
         seg.status = SegmentStatus.failed;
@@ -136,13 +141,28 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
       await File(srtPath).writeAsString(srtContent);
 
       setState(() => _masterAudioPath = outPath);
+
+      final totalDuration = _segments.fold<double>(0.0, (sum, s) => sum + (s.duration ?? 0.0));
+      final masterResult = GenerationResult(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        audioPath: outPath,
+        duration: totalDuration,
+        inferenceTime: 0.0,
+        rtf: 0.0,
+        sampleRate: 48000,
+        text: _inputController.text.trim(),
+        voiceName: "${_selectedVoice.name} (Stitched Master)",
+        createdAt: DateTime.now(),
+      );
+      widget.onAudioGenerated?.call(masterResult);
+
       await widget.audioService.loadAudio(outPath);
       await widget.audioService.play();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: AppTheme.surfaceLight,
+            backgroundColor: AppTheme.success,
             content: Text("Master audio and subtitles exported to:\n$outPath\n$srtPath"),
           ),
         );
@@ -153,6 +173,7 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
   @override
   Widget build(BuildContext context) {
     final readyCount = _segments.where((s) => s.status == SegmentStatus.ready).length;
+    final allPersonas = [...DefaultPresets.presets, ...widget.userPersonas];
 
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -168,9 +189,13 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
                   children: [
                     const Icon(Icons.segment, color: AppTheme.primary, size: 20),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       "Long-Form Script Input",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.text(context),
+                      ),
                     ),
                     const Spacer(),
                     ElevatedButton.icon(
@@ -178,8 +203,10 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
                       icon: const Icon(Icons.auto_awesome, size: 14),
                       label: const Text("Segment Script", style: TextStyle(fontSize: 11)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.surfaceLight,
-                        foregroundColor: AppTheme.secondary,
+                        backgroundColor: AppTheme.cardLight(context),
+                        foregroundColor: AppTheme.primary,
+                        elevation: 0,
+                        side: BorderSide(color: AppTheme.border(context)),
                       ),
                     ),
                   ],
@@ -188,14 +215,19 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: AppTheme.glassCard(),
+                    decoration: BoxDecoration(
+                      color: AppTheme.cardBg(context),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.border(context)),
+                    ),
                     child: TextField(
                       controller: _inputController,
                       maxLines: null,
                       expands: true,
-                      style: const TextStyle(fontSize: 13, height: 1.6, color: AppTheme.textPrimary),
-                      decoration: const InputDecoration(
-                        hintText: "Paste your article or script here...",
+                      style: TextStyle(fontSize: 13, height: 1.6, color: AppTheme.text(context)),
+                      decoration: InputDecoration(
+                        hintText: "Paste your article, chapter, or podcast script here...",
+                        hintStyle: TextStyle(color: AppTheme.textSub(context)),
                         border: InputBorder.none,
                       ),
                     ),
@@ -207,52 +239,150 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
 
           const SizedBox(width: 20),
 
-          // Right: Segments Queue & Stitch Controls
+          // Right: Voice Persona Selector, Segments Queue & Stitch Controls
           Expanded(
             flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      "Segments (${_segments.length} chunks • $readyCount ready)",
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                    ),
-                    const Spacer(),
-                    // Batch Generate Button
-                    ElevatedButton.icon(
-                      onPressed: _isGeneratingAll || _segments.isEmpty ? null : _generateAllSegments,
-                      icon: _isGeneratingAll
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.play_circle_outline, size: 16),
-                      label: Text(
-                        _isGeneratingAll ? "Generating ${_currentIndex + 1}/${_segments.length}..." : "Generate All",
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                // Top Action Bar & Voice Template Card
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBg(context),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.border(context)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Text(_selectedVoice.avatar, style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      _selectedVoice.name,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.text(context),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.cardLight(context),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Text(
+                                        _selectedVoice.gender.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: _selectedVoice.gender.toLowerCase() == 'female'
+                                              ? Colors.pinkAccent
+                                              : AppTheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _selectedVoice.controlInstruction,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 11, color: AppTheme.textSub(context)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              VoiceSelectorModal.show(
+                                context,
+                                personas: allPersonas,
+                                selectedPersona: _selectedVoice,
+                                onSelect: (p) => setState(() => _selectedVoice = p),
+                              );
+                            },
+                            icon: const Icon(Icons.swap_horiz, size: 14),
+                            label: const Text("Change Voice", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.primary,
+                              side: const BorderSide(color: AppTheme.primary),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            ),
+                          ),
+                        ],
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
+                      const Divider(height: 16),
+                      Row(
+                        children: [
+                          Text(
+                            "${_segments.length} Segments • $readyCount Ready",
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSub(context)),
+                          ),
+                          const Spacer(),
+                          // Batch Generate Button
+                          ElevatedButton.icon(
+                            onPressed: _isGeneratingAll || _segments.isEmpty ? null : _generateAllSegments,
+                            icon: _isGeneratingAll
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.play_arrow, size: 16),
+                            label: Text(
+                              _isGeneratingAll ? "Generating (${_currentIndex + 1}/${_segments.length})..." : "Generate All",
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Stitch & Export Button
+                          ElevatedButton.icon(
+                            onPressed: readyCount > 0 ? _stitchAndExport : null,
+                            icon: const Icon(Icons.merge_type, size: 16),
+                            label: const Text("Stitch & Export", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: readyCount > 0 ? AppTheme.cardLight(context) : AppTheme.cardLight(context).withOpacity(0.5),
+                              foregroundColor: AppTheme.text(context),
+                              elevation: 0,
+                              side: BorderSide(color: AppTheme.border(context)),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Stitch & Export Button
-                    ElevatedButton.icon(
-                      onPressed: readyCount > 0 ? _stitchAndExport : null,
-                      icon: const Icon(Icons.merge, size: 16),
-                      label: const Text("Stitch & Export", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondary,
-                        foregroundColor: Colors.black,
-                      ),
-                    ),
-                  ],
+                      if (_isGeneratingAll) ...[
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            value: _segments.isEmpty ? 0 : (_currentIndex + 1) / _segments.length,
+                            backgroundColor: AppTheme.border(context),
+                            valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                            minHeight: 3,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
+
                 if (_masterAudioPath != null) ...[
                   Container(
                     margin: const EdgeInsets.only(bottom: 10),
@@ -276,7 +406,6 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 4),
 
                 // Segments List View
                 Expanded(
@@ -284,7 +413,7 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
                       ? Center(
                           child: Text(
                             "No segments. Paste text on the left and click 'Segment Script'.",
-                            style: TextStyle(color: AppTheme.textMuted),
+                            style: TextStyle(color: AppTheme.textSub(context)),
                           ),
                         )
                       : ListView.builder(
@@ -304,7 +433,7 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
   }
 
   Widget _buildSegmentCard(TextSegment seg, int index) {
-    Color statusColor = AppTheme.textMuted;
+    Color statusColor = AppTheme.textSub(context);
     String statusLabel = "Pending";
     if (seg.status == SegmentStatus.generating) {
       statusColor = AppTheme.warning;
@@ -313,20 +442,21 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
       statusColor = AppTheme.success;
       statusLabel = "${seg.duration?.toStringAsFixed(1)}s Ready";
     } else if (seg.status == SegmentStatus.failed) {
-      statusColor = AppTheme.accent;
+      statusColor = AppTheme.error;
       statusLabel = "Error";
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceLight.withOpacity(0.6),
+        color: AppTheme.cardBg(context),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: seg.status == SegmentStatus.generating 
               ? AppTheme.primary 
-              : AppTheme.surfaceBorder,
+              : AppTheme.border(context),
+          width: seg.status == SegmentStatus.generating ? 1.5 : 1.0,
         ),
       ),
       child: Column(
@@ -337,12 +467,12 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.surface,
+                  color: AppTheme.cardLight(context),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   "#${index + 1}",
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSub(context)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -359,13 +489,13 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
               const Spacer(),
               if (seg.status == SegmentStatus.ready && seg.audioPath != null) ...[
                 IconButton(
-                  icon: const Icon(Icons.play_arrow, size: 18, color: AppTheme.secondary),
+                  icon: const Icon(Icons.play_arrow, size: 18, color: AppTheme.primary),
                   onPressed: () => widget.audioService.loadAudio(seg.audioPath!).then((_) => widget.audioService.play()),
                   tooltip: "Preview Segment",
                 ),
               ],
               IconButton(
-                icon: const Icon(Icons.refresh, size: 16, color: AppTheme.textMuted),
+                icon: Icon(Icons.refresh, size: 16, color: AppTheme.textSub(context)),
                 onPressed: () => _generateSegment(seg),
                 tooltip: "Re-synthesize this chunk",
               ),
@@ -374,7 +504,7 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
           const SizedBox(height: 6),
           Text(
             seg.text,
-            style: const TextStyle(fontSize: 13, height: 1.4, color: AppTheme.textPrimary),
+            style: TextStyle(fontSize: 12, height: 1.5, color: AppTheme.text(context)),
           ),
         ],
       ),

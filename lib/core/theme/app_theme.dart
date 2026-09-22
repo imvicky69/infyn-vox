@@ -1,73 +1,158 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Brand Palette
-  static const Color background = Color(0xFF090D16);
-  static const Color surface = Color(0xFF0F172A);
-  static const Color surfaceLight = Color(0xFF1E293B);
-  static const Color surfaceBorder = Color(0xFF334155);
-  
-  static const Color primary = Color(0xFF8B5CF6);      // Electric Violet
-  static const Color primaryLight = Color(0xFFA78BFA);
-  static const Color primaryDark = Color(0xFF6D28D9);
-  
-  static const Color secondary = Color(0xFF06B6D4);    // Cyan
-  static const Color accent = Color(0xFFF43F5E);       // Rose (Recording/Live)
-  static const Color success = Color(0xFF10B981);      // Emerald (Ready/Loaded)
-  static const Color warning = Color(0xFFF59E0B);      // Amber
-  
-  // Text Colors
-  static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color textMuted = Color(0xFF64748B);
+  // Theme Mode Notifier for instant toggling
+  static final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark);
 
+  static bool get isDarkMode => themeModeNotifier.value == ThemeMode.dark;
+
+  static void toggleTheme() {
+    themeModeNotifier.value = isDarkMode ? ThemeMode.light : ThemeMode.dark;
+  }
+
+  // Brand Accent: Clean Electric Blue #3B82F6
+  static const Color primary = Color(0xFF3B82F6);       // #3B82F6
+  static const Color primaryLight = Color(0xFF60A5FA);  // #60A5FA
+  static const Color primaryDark = Color(0xFF2563EB);   // #2563EB
+  static const Color accent = Color(0xFF3B82F6);
+  
+  // Status Colors
+  static const Color success = Color(0xFF10B981);       // Emerald
+  static const Color warning = Color(0xFFF59E0B);       // Amber
+  static const Color error = Color(0xFFEF4444);         // Rose
+
+  // Dark Palette (Sleek Monochrome / Zinc 950)
+  static const Color darkBackground = Color(0xFF09090B);
+  static const Color darkSurface = Color(0xFF121215);
+  static const Color darkSurfaceLight = Color(0xFF18181B);
+  static const Color darkSurfaceBorder = Color(0xFF27272A);
+  static const Color darkTextPrimary = Color(0xFFFAFAFA);
+  static const Color darkTextSecondary = Color(0xFFA1A1AA);
+  static const Color darkTextMuted = Color(0xFF71717A);
+
+  // Light Palette (Pure Minimalist White / Slate)
+  static const Color lightBackground = Color(0xFFF8FAFC);
+  static const Color lightSurface = Color(0xFFFFFFFF);
+  static const Color lightSurfaceLight = Color(0xFFF1F5F9);
+  static const Color lightSurfaceBorder = Color(0xFFE2E8F0);
+  static const Color lightTextPrimary = Color(0xFF0F172A);
+  static const Color lightTextSecondary = Color(0xFF475569);
+  static const Color lightTextMuted = Color(0xFF94A3B8);
+
+  // Default Dynamic Fallbacks (matching current theme mode)
+  static Color get background => isDarkMode ? darkBackground : lightBackground;
+  static Color get surface => isDarkMode ? darkSurface : lightSurface;
+  static Color get surfaceLight => isDarkMode ? darkSurfaceLight : lightSurfaceLight;
+  static Color get surfaceBorder => isDarkMode ? darkSurfaceBorder : lightSurfaceBorder;
+  static Color get textPrimary => isDarkMode ? darkTextPrimary : lightTextPrimary;
+  static Color get textSecondary => isDarkMode ? darkTextSecondary : lightTextSecondary;
+  static Color get textMuted => isDarkMode ? darkTextMuted : lightTextMuted;
+  static const Color secondary = primaryLight;
+
+  // Context-aware Helpers
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+  static Color bg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkBackground : lightBackground;
+  static Color cardBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkSurface : lightSurface;
+  static Color cardLight(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkSurfaceLight : lightSurfaceLight;
+  static Color border(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkSurfaceBorder : lightSurfaceBorder;
+  static Color text(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkTextPrimary : lightTextPrimary;
+  static Color textSub(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkTextSecondary : lightTextSecondary;
+
+  // Dark Theme Definition
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: background,
+    fontFamily: 'Geist',
+    scaffoldBackgroundColor: darkBackground,
     colorScheme: const ColorScheme.dark(
       primary: primary,
-      secondary: secondary,
-      surface: surface,
-      error: accent,
+      secondary: primaryLight,
+      surface: darkSurface,
+      error: error,
     ),
-    fontFamily: 'Segoe UI',
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
+    textTheme: ThemeData.dark().textTheme.apply(
+      fontFamily: 'Geist',
+      bodyColor: darkTextPrimary,
+      displayColor: darkTextPrimary,
     ),
     cardTheme: CardThemeData(
-      color: surface,
+      color: darkSurface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: surfaceBorder, width: 1),
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: darkSurfaceBorder, width: 1),
       ),
     ),
-    sliderTheme: SliderThemeData(
+    sliderTheme: const SliderThemeData(
       activeTrackColor: primary,
-      inactiveTrackColor: surfaceBorder,
-      thumbColor: primaryLight,
-      overlayColor: primary.withValues(alpha: 0.2),
-      trackHeight: 4.0,
-      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+      inactiveTrackColor: darkSurfaceBorder,
+      thumbColor: Colors.white,
+      overlayColor: Color(0x333B82F6),
+      trackHeight: 3.0,
+      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
     ),
   );
 
-  // Reusable BoxDecorations
-  static BoxDecoration glassCard({BorderRadius? borderRadius, Color? borderColor}) {
+  // Light Theme Definition
+  static ThemeData lightTheme = ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+    fontFamily: 'Geist',
+    scaffoldBackgroundColor: lightBackground,
+    colorScheme: const ColorScheme.light(
+      primary: primary,
+      secondary: primaryDark,
+      surface: lightSurface,
+      error: error,
+    ),
+    textTheme: ThemeData.light().textTheme.apply(
+      fontFamily: 'Geist',
+      bodyColor: lightTextPrimary,
+      displayColor: lightTextPrimary,
+    ),
+    cardTheme: CardThemeData(
+      color: lightSurface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: lightSurfaceBorder, width: 1),
+      ),
+    ),
+    sliderTheme: const SliderThemeData(
+      activeTrackColor: primary,
+      inactiveTrackColor: lightSurfaceBorder,
+      thumbColor: primary,
+      overlayColor: Color(0x223B82F6),
+      trackHeight: 3.0,
+      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
+    ),
+  );
+
+  // Reusable Clean Minimal BoxDecorations
+  static BoxDecoration glassCard({BorderRadius? borderRadius, Color? borderColor, BuildContext? context}) {
+    final isDark = context != null
+        ? Theme.of(context).brightness == Brightness.dark
+        : isDarkMode;
+        
     return BoxDecoration(
-      color: surface.withValues(alpha: 0.85),
-      borderRadius: borderRadius ?? BorderRadius.circular(12),
+      color: isDark ? darkSurface : lightSurface,
+      borderRadius: borderRadius ?? BorderRadius.circular(10),
       border: Border.all(
-        color: borderColor ?? surfaceBorder.withValues(alpha: 0.7),
+        color: borderColor ?? (isDark ? darkSurfaceBorder : lightSurfaceBorder),
         width: 1,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.35),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
+          color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
         ),
       ],
     );
@@ -78,9 +163,9 @@ class AppTheme {
       shape: BoxShape.circle,
       boxShadow: [
         BoxShadow(
-          color: glowColor.withValues(alpha: 0.4),
-          blurRadius: 14,
-          spreadRadius: 2,
+          color: glowColor.withOpacity(0.2),
+          blurRadius: 10,
+          spreadRadius: 1,
         ),
       ],
     );

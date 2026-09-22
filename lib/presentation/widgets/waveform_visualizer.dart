@@ -19,6 +19,7 @@ class WaveformVisualizer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppTheme.isDark(context);
     final progress = totalDuration.inMilliseconds > 0
         ? (currentPosition.inMilliseconds / totalDuration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
@@ -40,6 +41,7 @@ class WaveformVisualizer extends StatelessWidget {
               painter: _WaveformPainter(
                 peaks: peaks.isEmpty ? _defaultPeaks : peaks,
                 progress: progress,
+                isDark: isDark,
               ),
             ),
           ),
@@ -54,8 +56,13 @@ class WaveformVisualizer extends StatelessWidget {
 class _WaveformPainter extends CustomPainter {
   final List<double> peaks;
   final double progress;
+  final bool isDark;
 
-  _WaveformPainter({required this.peaks, required this.progress});
+  _WaveformPainter({
+    required this.peaks,
+    required this.progress,
+    required this.isDark,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -67,16 +74,12 @@ class _WaveformPainter extends CustomPainter {
     final centerY = size.height / 2;
 
     final playedPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [AppTheme.primary, AppTheme.secondary],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..color = AppTheme.primary
       ..strokeCap = StrokeCap.round
       ..strokeWidth = barWidth;
 
     final unplayedPaint = Paint()
-      ..color = AppTheme.surfaceBorder.withOpacity(0.6)
+      ..color = isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7)
       ..strokeCap = StrokeCap.round
       ..strokeWidth = barWidth;
 
@@ -95,10 +98,10 @@ class _WaveformPainter extends CustomPainter {
       );
     }
 
-    // Draw playhead vertical line with subtle glow
+    // Draw playhead vertical line
     final playheadX = progress * size.width;
     final playheadPaint = Paint()
-      ..color = Colors.white
+      ..color = AppTheme.primary
       ..strokeWidth = 2.0;
 
     canvas.drawLine(
@@ -110,6 +113,8 @@ class _WaveformPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _WaveformPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.peaks != peaks;
+    return oldDelegate.progress != progress ||
+        oldDelegate.peaks != peaks ||
+        oldDelegate.isDark != isDark;
   }
 }

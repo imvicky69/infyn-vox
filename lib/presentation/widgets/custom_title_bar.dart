@@ -34,9 +34,9 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
   Widget build(BuildContext context) {
     return Container(
       height: 42,
-      decoration: const BoxDecoration(
-        color: AppTheme.surface,
-        border: Border(bottom: BorderSide(color: AppTheme.surfaceBorder, width: 1)),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg(context),
+        border: Border(bottom: BorderSide(color: AppTheme.border(context), width: 1)),
       ),
       child: Row(
         children: [
@@ -47,39 +47,39 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppTheme.primary, AppTheme.secondary],
-                        ),
-                        borderRadius: BorderRadius.circular(6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'lib/images/logo.png',
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
                       ),
-                      child: const Icon(Icons.graphic_eq, size: 16, color: Colors.white),
                     ),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       "VoxStudio PC",
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: AppTheme.textPrimary,
+                        letterSpacing: 0.3,
+                        color: AppTheme.text(context),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceLight,
+                        color: AppTheme.cardLight(context),
                         borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppTheme.border(context), width: 0.5),
                       ),
                       child: const Text(
-                        "VoxCPM2 48kHz",
+                        "48kHz Studio",
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.secondary,
+                          color: AppTheme.primary,
                         ),
                       ),
                     ),
@@ -127,6 +127,30 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
               ),
             ),
           ),
+          // Theme Toggle Button
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: AppTheme.themeModeNotifier,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark;
+              return Tooltip(
+                message: isDark ? "Switch to Light Mode" : "Switch to Dark Mode",
+                child: InkWell(
+                  onTap: () => AppTheme.toggleTheme(),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(
+                      isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      size: 16,
+                      color: AppTheme.textSub(context),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
           // Window Control Buttons (Minimize, Maximize, Close)
           _WindowButton(
             icon: Icons.remove,

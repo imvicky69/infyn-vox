@@ -63,9 +63,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     widget.onConfigChanged();
     _checkServer();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: AppTheme.surfaceLight,
-        content: Text("Server configuration updated successfully."),
+      SnackBar(
+        backgroundColor: AppTheme.cardLight(context),
+        content: Text("Server configuration updated successfully.", style: TextStyle(color: AppTheme.text(context))),
       ),
     );
   }
@@ -80,20 +80,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          const Row(
+          Row(
             children: [
-              Icon(Icons.tune, color: AppTheme.primary, size: 24),
-              SizedBox(width: 12),
+              const Icon(Icons.tune, color: AppTheme.primary, size: 24),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     "Engine Settings & Hardware Hub",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                   ),
                   Text(
                     "Configure backend endpoints, local sidecar processes, and monitor system resources",
-                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                   ),
                 ],
               ),
@@ -105,38 +105,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppTheme.surfaceLight, AppTheme.primaryDark.withOpacity(0.2)],
-              ),
+              color: AppTheme.cardBg(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.primary.withOpacity(0.35)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.memory, color: AppTheme.secondary, size: 20),
+                    const Icon(Icons.memory, color: AppTheme.primary, size: 20),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       "Detected Hardware: Intel(R) Iris(R) Xe Graphics (iGPU)",
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                     ),
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.secondary.withOpacity(0.15),
+                        color: AppTheme.primary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text("Shared Memory", style: TextStyle(fontSize: 10, color: AppTheme.secondary)),
+                      child: const Text("Shared Memory", style: TextStyle(fontSize: 10, color: AppTheme.primary, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   "ℹ️ Recommendation: Because this machine utilizes integrated graphics, connecting to a Remote GPU Server (vLLM-Omni / RunPod / Modal / LAN NVIDIA RTX) delivers instantaneous ~0.15 RTF streaming synthesis. For offline usage, local CPU mode operates via our optimized sidecar.",
-                  style: TextStyle(fontSize: 12, height: 1.5, color: AppTheme.textSecondary),
+                  style: TextStyle(fontSize: 12, height: 1.5, color: AppTheme.textSub(context)),
                 ),
               ],
             ),
@@ -147,23 +145,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Remote Server Configuration Card
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: AppTheme.glassCard(),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBg(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border(context)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.cloud_outlined, color: AppTheme.secondary, size: 18),
+                    const Icon(Icons.cloud_outlined, color: AppTheme.primary, size: 18),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       "VoxCPM Server Connection (vLLM-Omni / FastAPI / OpenAI)",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                     ),
                     const Spacer(),
                     IconButton(
                       icon: _isChecking
                           ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.refresh, size: 18),
+                          : Icon(Icons.refresh, size: 18, color: AppTheme.text(context)),
                       onPressed: _checkServer,
                       tooltip: "Ping Server",
                     ),
@@ -176,13 +178,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       flex: 3,
                       child: TextField(
                         controller: _urlController,
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+                        style: TextStyle(fontSize: 13, color: AppTheme.text(context)),
                         decoration: InputDecoration(
                           labelText: "Server Endpoint URL",
+                          labelStyle: TextStyle(color: AppTheme.textSub(context)),
                           hintText: "http://127.0.0.1:8808 or https://your-gpu-server.com",
+                          hintStyle: TextStyle(color: AppTheme.textSub(context)),
                           filled: true,
-                          fillColor: AppTheme.surfaceLight,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          fillColor: AppTheme.cardLight(context),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: AppTheme.border(context)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+                          ),
                         ),
                       ),
                     ),
@@ -192,13 +203,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: TextField(
                         controller: _apiKeyController,
                         obscureText: true,
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+                        style: TextStyle(fontSize: 13, color: AppTheme.text(context)),
                         decoration: InputDecoration(
                           labelText: "API Key (optional)",
+                          labelStyle: TextStyle(color: AppTheme.textSub(context)),
                           hintText: "Bearer token",
+                          hintStyle: TextStyle(color: AppTheme.textSub(context)),
                           filled: true,
-                          fillColor: AppTheme.surfaceLight,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          fillColor: AppTheme.cardLight(context),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: AppTheme.border(context)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+                          ),
                         ),
                       ),
                     ),
@@ -220,9 +240,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceLight,
+                    color: AppTheme.cardLight(context),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.surfaceBorder),
+                    border: Border.all(color: AppTheme.border(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: isHealthy ? AppTheme.textPrimary : AppTheme.warning,
+                                color: isHealthy ? AppTheme.text(context) : AppTheme.warning,
                               ),
                             ),
                           ),
@@ -253,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 8),
                         Text(
                           "Model: ${_modelData!['model'] ?? 'VoxCPM2'}  |  Arch: ${_modelData!['architecture'] ?? 'MiniCPM-4-2B + LocDiT'}  |  Languages: ${_modelData!['supported_languages'] ?? 30}",
-                          style: const TextStyle(fontSize: 11, color: AppTheme.secondary),
+                          style: const TextStyle(fontSize: 11, color: AppTheme.primary, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ],
@@ -268,7 +288,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Local Sidecar Process Manager
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: AppTheme.glassCard(),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBg(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border(context)),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -276,9 +300,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Icon(Icons.terminal, color: AppTheme.primary, size: 18),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       "Local Sidecar Process Controller",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                     ),
                     const Spacer(),
                     Container(
@@ -286,8 +310,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: widget.sidecarService.status == SidecarStatus.running
                             ? AppTheme.success.withOpacity(0.15)
-                            : AppTheme.surfaceBorder,
+                            : AppTheme.cardLight(context),
                         borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppTheme.border(context)),
                       ),
                       child: Text(
                         widget.sidecarService.status.name.toUpperCase(),
@@ -296,16 +321,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           fontWeight: FontWeight.bold,
                           color: widget.sidecarService.status == SidecarStatus.running
                               ? AppTheme.success
-                              : AppTheme.textMuted,
+                              : AppTheme.textSub(context),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   "Launches a local background instance of server.py or llama.cpp-omni on your PC. Flutter monitors logs and automatically shuts down the background worker upon application close.",
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -333,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       label: const Text("Stop Server"),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.accent,
-                        side: const BorderSide(color: AppTheme.surfaceBorder),
+                        side: BorderSide(color: AppTheme.border(context)),
                       ),
                     ),
                   ],
@@ -345,19 +370,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: AppTheme.isDark(context) ? const Color(0xFF09090B) : const Color(0xFFF4F4F5),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.surfaceBorder),
+                    border: Border.all(color: AppTheme.border(context)),
                   ),
                   child: ListView.builder(
                     itemCount: widget.sidecarService.logs.length,
                     itemBuilder: (ctx, idx) {
                       return Text(
                         widget.sidecarService.logs[idx],
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 11,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSub(context),
                         ),
                       );
                     },

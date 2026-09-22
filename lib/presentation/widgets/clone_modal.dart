@@ -134,10 +134,10 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.cardBg(context),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.surfaceBorder, width: 1),
+        side: BorderSide(color: AppTheme.border(context), width: 1),
       ),
       child: Container(
         width: 680,
@@ -152,28 +152,28 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.15),
+                    color: AppTheme.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.record_voice_over, color: AppTheme.primaryLight, size: 20),
+                  child: const Icon(Icons.record_voice_over, color: AppTheme.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "Voice Studio & Cloning Wizard",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
                     ),
                     Text(
                       "Create custom voices using Zero-Shot Voice Design or Voice Cloning",
-                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      style: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                     ),
                   ],
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppTheme.textSecondary, size: 20),
+                  icon: Icon(Icons.close, color: AppTheme.textSub(context), size: 20),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -184,7 +184,7 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
             Container(
               height: 38,
               decoration: BoxDecoration(
-                color: AppTheme.surfaceLight,
+                color: AppTheme.cardLight(context),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: TabBar(
@@ -194,7 +194,7 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                   borderRadius: BorderRadius.circular(7),
                 ),
                 labelColor: Colors.white,
-                unselectedLabelColor: AppTheme.textSecondary,
+                unselectedLabelColor: AppTheme.textSub(context),
                 labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 tabs: const [
                   Tab(text: "🎨 Voice Design"),
@@ -211,7 +211,11 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                 // Avatar Picker
                 PopupMenuButton<String>(
                   initialValue: _selectedAvatar,
-                  color: AppTheme.surfaceLight,
+                  color: AppTheme.cardBg(context),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: AppTheme.border(context)),
+                  ),
                   onSelected: (val) => setState(() => _selectedAvatar = val),
                   itemBuilder: (context) => _avatars
                       .map((a) => PopupMenuItem(value: a, child: Text(a, style: const TextStyle(fontSize: 20))))
@@ -220,9 +224,9 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceLight,
+                      color: AppTheme.cardLight(context),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.surfaceBorder),
+                      border: Border.all(color: AppTheme.border(context)),
                     ),
                     child: Center(
                       child: Text(_selectedAvatar, style: const TextStyle(fontSize: 22)),
@@ -235,20 +239,24 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                 Expanded(
                   child: TextField(
                     controller: _nameController,
-                    style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+                    style: TextStyle(fontSize: 13, color: AppTheme.text(context)),
                     decoration: InputDecoration(
                       labelText: "Voice Persona Name",
-                      labelStyle: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      labelStyle: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                       filled: true,
-                      fillColor: AppTheme.surfaceLight,
+                      fillColor: AppTheme.cardLight(context),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.surfaceBorder),
+                        borderSide: BorderSide(color: AppTheme.border(context)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppTheme.surfaceBorder),
+                        borderSide: BorderSide(color: AppTheme.border(context)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
                       ),
                     ),
                   ),
@@ -256,15 +264,28 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                 const SizedBox(width: 12),
 
                 // Gender Dropdown
-                DropdownButton<String>(
-                  value: _selectedGender,
-                  dropdownColor: AppTheme.surfaceLight,
-                  items: ["Female", "Male", "Neutral"]
-                      .map((g) => DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(fontSize: 12))))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedGender = val);
-                  },
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardLight(context),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.border(context)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedGender,
+                      dropdownColor: AppTheme.cardBg(context),
+                      items: ["Female", "Male", "Neutral"]
+                          .map((g) => DropdownMenuItem(
+                                value: g,
+                                child: Text(g, style: TextStyle(fontSize: 12, color: AppTheme.text(context))),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedGender = val);
+                      },
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -279,24 +300,32 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Voice Description Instruction:",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSub(context)),
                       ),
                       const SizedBox(height: 6),
                       Expanded(
                         child: TextField(
                           controller: _designPromptController,
                           maxLines: 5,
-                          style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+                          style: TextStyle(fontSize: 13, color: AppTheme.text(context)),
                           decoration: InputDecoration(
                             hintText: "Describe gender, age, tone, emotion, pace (e.g., Young female voice, gentle, smiling)...",
-                            hintStyle: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                            hintStyle: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                             filled: true,
-                            fillColor: AppTheme.surfaceLight,
+                            fillColor: AppTheme.cardLight(context),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: AppTheme.surfaceBorder),
+                              borderSide: BorderSide(color: AppTheme.border(context)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: AppTheme.border(context)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
                             ),
                           ),
                         ),
@@ -310,23 +339,31 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                     children: [
                       _buildReferenceAudioPicker(),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         "Style Guidance Prompt (optional):",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSub(context)),
                       ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _stylePromptController,
                         maxLines: 2,
-                        style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+                        style: TextStyle(fontSize: 13, color: AppTheme.text(context)),
                         decoration: InputDecoration(
                           hintText: "Adjust emotion, speaking speed, or emphasis while preserving original timbre...",
-                          hintStyle: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          hintStyle: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                           filled: true,
-                          fillColor: AppTheme.surfaceLight,
+                          fillColor: AppTheme.cardLight(context),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppTheme.surfaceBorder),
+                            borderSide: BorderSide(color: AppTheme.border(context)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: AppTheme.border(context)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
                           ),
                         ),
                       ),
@@ -341,16 +378,16 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          const Text(
+                          Text(
                             "Reference Transcript (ASR Continuation):",
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textSub(context)),
                           ),
                           const Spacer(),
                           if (_isTranscribing)
                             const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.secondary),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
                             ),
                         ],
                       ),
@@ -359,15 +396,23 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
                         child: TextField(
                           controller: _transcriptController,
                           maxLines: 4,
-                          style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+                          style: TextStyle(fontSize: 13, color: AppTheme.text(context)),
                           decoration: InputDecoration(
                             hintText: "Exact spoken transcript of the reference audio for 100% nuanced continuation...",
-                            hintStyle: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                            hintStyle: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
                             filled: true,
-                            fillColor: AppTheme.surfaceLight,
+                            fillColor: AppTheme.cardLight(context),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: AppTheme.surfaceBorder),
+                              borderSide: BorderSide(color: AppTheme.border(context)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: AppTheme.border(context)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
                             ),
                           ),
                         ),
@@ -386,7 +431,7 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel", style: TextStyle(color: AppTheme.textSecondary)),
+                  child: Text("Cancel", style: TextStyle(color: AppTheme.textSub(context))),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
@@ -412,15 +457,15 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceLight,
+        color: AppTheme.cardLight(context),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.surfaceBorder),
+        border: Border.all(color: AppTheme.border(context)),
       ),
       child: Row(
         children: [
           Icon(
             _referenceAudioPath != null ? Icons.check_circle : Icons.upload_file,
-            color: _referenceAudioPath != null ? AppTheme.success : AppTheme.secondary,
+            color: _referenceAudioPath != null ? AppTheme.success : AppTheme.primary,
             size: 20,
           ),
           const SizedBox(width: 10),
@@ -433,15 +478,15 @@ class _CloneModalState extends State<CloneModal> with SingleTickerProviderStateM
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
-                color: _referenceAudioPath != null ? AppTheme.textPrimary : AppTheme.textMuted,
+                color: _referenceAudioPath != null ? AppTheme.text(context) : AppTheme.textSub(context),
               ),
             ),
           ),
-          ElevatedButton(
+          OutlinedButton(
             onPressed: _pickReferenceAudio,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.surfaceBorder,
-              foregroundColor: AppTheme.textPrimary,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.text(context),
+              side: BorderSide(color: AppTheme.border(context)),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             child: const Text("Choose File", style: TextStyle(fontSize: 11)),
