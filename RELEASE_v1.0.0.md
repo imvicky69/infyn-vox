@@ -46,20 +46,31 @@ infyn Vox is a desktop audio workstation engineered for high-fidelity speech syn
 
 ## 🚀 Installation & Running
 
-### Windows (x64)
+### Option A: Direct Installer Executable (Recommended)
+1. Download **`infyn-vox-v1.0.0-setup.exe`** from the Assets below.
+2. Double click the installer executable and follow the quick setup wizard.
+3. Automatically creates **Desktop** and **Start Menu** shortcuts.
+4. Launch **infyn Vox** directly from your Desktop or Start Menu!
 
+### Option B: Portable Archive (No Installation Required)
 1. Download **`infyn-vox-v1.0.0-windows-x64.zip`** from the Assets below.
 2. Extract the archive to any folder on your computer.
-3. Start the backend synthesis server:
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   python server.py --host 127.0.0.1 --port 8808
-   ```
-4. Double click **`infyn_vox.exe`** to launch the workstation!
+3. Double click **`infyn_vox.exe`** to launch the workstation immediately!
+
+### Backend Synthesis Engine Setup
+Ensure the local Python speech synthesis backend is running:
+```bash
+cd backend
+pip install -r requirements.txt
+python server.py --host 127.0.0.1 --port 8808
+```
 
 ---
 
 ## 📦 Release Assets
 
-- `infyn-vox-v1.0.0-windows-x64.zip` — Portable Windows x64 Release Bundle.
+| Asset Name | Type | Size | Description |
+| :--- | :--- | :--- | :--- |
+| **`infyn-vox-v1.0.0-setup.exe`** | Direct Installer | ~12.7 MB | Standalone Windows installer wizard with Desktop/Start Menu shortcuts |
+| **`infyn-vox-v1.0.0-windows-x64.zip`** | Portable Archive | ~14.2 MB | Portable pre-packaged zip archive (extract and run) |
+

@@ -28,15 +28,24 @@ class AppReleaseInfo {
     final body = (json['body'] as String? ?? '').trim();
     final htmlUrl = (json['html_url'] as String? ?? 'https://github.com/imvicky69/infyn-vox/releases').trim();
     
-    // Check for direct executable or zip assets
+    // Check for direct installer executable (.exe) first, fallback to portable .zip
     String? directUrl;
     final assets = json['assets'] as List<dynamic>?;
     if (assets != null && assets.isNotEmpty) {
       for (final a in assets) {
         final assetName = (a['name'] as String? ?? '').toLowerCase();
-        if (assetName.endsWith('.exe') || assetName.endsWith('.zip')) {
+        if (assetName.endsWith('.exe')) {
           directUrl = a['browser_download_url'] as String?;
           break;
+        }
+      }
+      if (directUrl == null) {
+        for (final a in assets) {
+          final assetName = (a['name'] as String? ?? '').toLowerCase();
+          if (assetName.endsWith('.zip')) {
+            directUrl = a['browser_download_url'] as String?;
+            break;
+          }
         }
       }
     }
