@@ -66,13 +66,16 @@ class _SegmenterScreenState extends State<SegmenterScreen> {
       final req = TTSRequest(
         text: seg.text,
         controlInstruction: _selectedVoice.controlInstruction,
+        gender: _selectedVoice.gender,
+        voiceId: _selectedVoice.id,
+        voiceName: _selectedVoice.name,
         mode: _selectedVoice.promptText != null ? 'ultimate' : 'design',
         cfgValue: 2.0,
         inferenceTimesteps: 10,
         language: _selectedVoice.language,
       );
 
-      final result = await widget.apiService.generateSpeech(req);
+      final result = await widget.apiService.generateSpeech(req, voiceName: _selectedVoice.name);
       setState(() {
         seg.status = SegmentStatus.ready;
         seg.audioPath = result.audioPath;

@@ -19,6 +19,19 @@ class SidecarService {
   Future<void> startLocalServer({String host = "127.0.0.1", int port = 8808}) async {
     if (_status == SidecarStatus.running || _status == SidecarStatus.starting) return;
 
+    // Check if server is already running on the port to avoid socket collision
+    try {
+      final client = HttpClient()..connectionTimeout = const Duration(milliseconds: 600);
+      final req = await client.getUrl(Uri.parse("http://$host:$port/health"));
+      final res = await req.close();
+      if (res.statusCode == 200) {
+        _status = SidecarStatus.running;
+        _logs.add("[INFO] Backend server is already running on http://$host:$port");
+        _statusController.add(_status);
+        return;
+      }
+    } catch (_) {}
+
     _status = SidecarStatus.starting;
     _statusController.add(_status);
     _logs.clear();

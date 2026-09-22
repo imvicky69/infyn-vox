@@ -88,6 +88,9 @@ class _StudioScreenState extends State<StudioScreen> {
         controlInstruction: _selectedPersona.controlInstruction.isNotEmpty 
             ? _selectedPersona.controlInstruction 
             : null,
+        gender: _selectedPersona.gender,
+        voiceId: _selectedPersona.id,
+        voiceName: _selectedPersona.name,
         mode: _selectedPersona.promptText != null 
             ? 'ultimate' 
             : (_selectedPersona.referenceAudioPath != null ? 'controllable' : 'design'),

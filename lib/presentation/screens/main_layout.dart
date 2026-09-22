@@ -33,7 +33,12 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   void initState() {
     super.initState();
-    _checkServerStatus();
+    _sidecarService.onStatusChanged.listen((status) {
+      if (status == SidecarStatus.running) {
+        _checkServerStatus();
+      }
+    });
+    _initEngineAndCheckStatus();
   }
 
   @override
@@ -49,11 +54,53 @@ class _MainLayoutState extends State<MainLayout> {
       setState(() {
         if (health['status'] == 'healthy') {
           _isServerConnected = true;
-          _serverStatusPill = "48kHz Engine Ready (${health['device']})";
+          _serverStatusPill = "48kHz Engine Ready (${health['device'] ?? 'Neural'})";
         } else {
           _isServerConnected = false;
           _serverStatusPill = "Engine Offline (Click Settings)";
         }
+      });
+    }
+  }
+
+  Future<void> _initEngineAndCheckStatus() async {
+    var health = await _apiService.checkHealth();
+    if (health['status'] == 'healthy') {
+      if (mounted) {
+        setState(() {
+          _isServerConnected = true;
+          _serverStatusPill = "48kHz Engine Ready (${health['device'] ?? 'Neural'})";
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _serverStatusPill = "Auto-starting Engine...";
+      });
+    }
+
+    await _sidecarService.startLocalServer();
+
+    for (int i = 0; i < 6; i++) {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      health = await _apiService.checkHealth();
+      if (health['status'] == 'healthy') {
+        if (mounted) {
+          setState(() {
+            _isServerConnected = true;
+            _serverStatusPill = "48kHz Engine Ready (${health['device'] ?? 'Neural'})";
+          });
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isServerConnected = false;
+        _serverStatusPill = "Engine Offline (Click Settings)";
       });
     }
   }

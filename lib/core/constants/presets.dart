@@ -62,5 +62,25 @@ class DefaultPresets {
       tags: ["Anime", "Dramatic", "Male", "Japanese"],
       isPreset: true,
     ),
+    VoicePersona(
+      id: "swara_hindi",
+      name: "Swara - Hindi Storyteller",
+      gender: "Female",
+      language: "hi",
+      controlInstruction: "एक मधुर और स्पष्ट भारतीय महिला की आवाज़, कहानियों और साक्षात्कारों के लिए उत्तम।",
+      avatar: "🪷",
+      tags: ["Hindi", "Storyteller", "Warm", "Female"],
+      isPreset: true,
+    ),
+    VoicePersona(
+      id: "kabir_hindi",
+      name: "Kabir - Hindi Narrator",
+      gender: "Male",
+      language: "hi",
+      controlInstruction: "एक गंभीर और प्रभावशाली भारतीय पुरुष की आवाज़, वृत्तचित्र और समाचार के लिए उपयुक्त।",
+      avatar: "🎙️",
+      tags: ["Hindi", "Documentary", "Male", "Deep"],
+      isPreset: true,
+    ),
   ];
 }

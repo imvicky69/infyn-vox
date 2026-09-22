@@ -10,6 +10,7 @@ Supports:
 
 import io
 import os
+import re
 import math
 import time
 import uuid
@@ -77,6 +78,9 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 class TTSGenerateRequest(BaseModel):
     text: str = Field(..., description="Target text to synthesize")
     control_instruction: Optional[str] = Field(None, description="Style or voice design description")
+    gender: Optional[str] = Field(None, description="Voice gender: 'male' or 'female'")
+    voice_id: Optional[str] = Field(None, description="Persona or preset ID")
+    voice_name: Optional[str] = Field(None, description="Persona or preset name")
     mode: str = Field("design", description="'design', 'controllable', or 'ultimate'")
     reference_audio_base64: Optional[str] = Field(None, description="Base64 encoded reference audio")
     reference_audio_path: Optional[str] = Field(None, description="Path or URL to reference audio")
@@ -169,78 +173,210 @@ def detect_script_language(text: str) -> Optional[str]:
 def pick_voice_from_instruction(
     instruction: Optional[str] = None,
     language: Optional[str] = None,
-    text: str = ""
-) -> str:
-    """Intelligently map text script, language tag, and voice design instructions to realistic neural voice."""
+    text: str = "",
+    gender: Optional[str] = None,
+    voice_id: Optional[str] = None,
+    voice_name: Optional[str] = None,
+) -> tuple[str, str, str]:
+    """Intelligently map text script, language tag, persona gender, and instructions to (voice, pitch, rate)."""
     # Step 1: Detect script from text characters (e.g. Devanagari text MUST use Hindi voice)
     script_lang = detect_script_language(text)
     
-    # Target language code
-    target_lang = script_lang or (language if language and language != "auto" else None)
+    # Target language code: text script takes priority, then explicit language tag, defaulting to "en"
+    target_lang = script_lang or (language if language and language != "auto" else "en")
     
-    # Determine gender
+    # Step 2: Determine gender reliably
+    is_female = False
     is_male = False
-    if instruction:
-        ci = instruction.lower()
-        if any(w in ci for w in ["male", "deep", "baritone", "david", "guy", "leo", "man", "boy", "kenji"]):
+    
+    # 2a: Check explicit gender parameter first
+    if gender:
+        g = gender.strip().lower()
+        if g in ["female", "f", "woman", "girl"]:
+            is_female = True
+        elif g in ["male", "m", "man", "boy"]:
             is_male = True
             
-    # If we have a target language
-    if target_lang and target_lang in LANGUAGE_VOICE_MAP:
-        v_pair = LANGUAGE_VOICE_MAP[target_lang]
-        return v_pair["male"] if is_male else v_pair["female"]
+    # 2b: Check voice_id or voice_name if still not resolved
+    combined_name = f"{voice_id or ''} {voice_name or ''}".lower()
+    if not is_female and not is_male and combined_name.strip():
+        if any(w in combined_name for w in ["elena", "aria", "xiaoya", "xiao ya", "swara", "priya", "sunhi", "svetlana", "denise", "katja", "nanami"]):
+            is_female = True
+        elif any(w in combined_name for w in ["david", "leo", "kenji", "madhur", "kabir", "christopher", "alvaro", "henri", "keita"]):
+            is_male = True
 
-    # Step 2: Check keywords in instruction
-    if instruction:
+    # 2c: Parse instruction keywords with regex word boundaries
+    if not is_female and not is_male and instruction:
         ci = instruction.lower()
-        if "chinese" in ci or "女声" in ci or "普通话" in ci or "温柔" in ci:
-            return "zh-CN-XiaoxiaoNeural"
-        if "cantonese" in ci or "粤语" in ci:
-            return "zh-HK-HiuGaaiNeural"
-        if "japanese" in ci or "anime" in ci:
-            return "ja-JP-KeitaNeural" if is_male else "ja-JP-NanamiNeural"
-        if "hindi" in ci or "हिन्दी" in ci:
-            return "hi-IN-MadhurNeural" if is_male else "hi-IN-SwaraNeural"
-        if "spanish" in ci or "español" in ci:
-            return "es-ES-AlvaroNeural" if is_male else "es-ES-ElviraNeural"
-        if "french" in ci or "français" in ci:
-            return "fr-FR-HenriNeural" if is_male else "fr-FR-DeniseNeural"
-        if "german" in ci or "deutsch" in ci:
-            return "de-DE-ConradNeural" if is_male else "de-DE-KatjaNeural"
-        if "british" in ci or "uk" in ci:
-            return "en-GB-RyanNeural" if is_male else "en-GB-SoniaNeural"
-        if "australian" in ci or "aussie" in ci:
-            return "en-AU-WilliamNeural" if is_male else "en-AU-NatashaNeural"
-        if "energetic" in ci or "podcast" in ci or "host" in ci:
-            return "en-US-GuyNeural"
-        if "warm" in ci or "soft" in ci or "gentle" in ci or "story" in ci:
-            return "en-US-JennyNeural"
-        if is_male:
-            return "en-US-ChristopherNeural"
+        has_female = bool(re.search(r'\b(female|woman|women|girl|lady|gentlewoman|she|her|femme|chica|donna)\b', ci))
+        has_male = bool(re.search(r'\b(male|man|men|boy|guy|gentleman|baritone|deep|he|him|his|homme|chico|uomo)\b', ci))
+        
+        if has_female and not has_male:
+            is_female = True
+        elif has_male and not has_female:
+            is_male = True
+        elif has_female and has_male:
+            is_female = True
+        elif any(w in ci for w in ["deep voice", "baritone", "authoritative", "podcast host"]):
+            is_male = True
 
-    return "en-US-ChristopherNeural" if is_male else "en-US-AriaNeural"
+    # Default fallback if neither
+    if not is_female and not is_male:
+        if instruction and any(w in instruction.lower() for w in ["warm", "soft", "sweet", "gentle", "melodic"]):
+            is_female = True
+        else:
+            is_female = False
+            is_male = True
+
+    vid = (voice_id or "").lower()
+    vnm = (voice_name or "").lower()
+    ins = (instruction or "").lower()
+
+    # Step 3: Identify specific persona archetype to assign distinctive pitch & rate
+    pitch = "+0Hz"
+    rate = "+0%"
+
+    # Archetype 1: Elena (Gentle, warm, comforting storyteller)
+    if "elena" in vid or "elena" in vnm or "storyteller" in vid or ("warm" in ins and "gentle" in ins and is_female):
+        pitch = "+6Hz"
+        rate = "-5%"
+        if target_lang == "en":
+            return "en-US-JennyNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["female"], pitch, rate
+        return "en-US-JennyNeural", pitch, rate
+
+    # Archetype 2: Aria (Crisp, upbeat, helpful assistant)
+    if "aria" in vid or "aria" in vnm or "assistant" in vid or ("assistant" in ins and is_female):
+        pitch = "+0Hz"
+        rate = "+5%"
+        if target_lang == "en":
+            return "en-US-AriaNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["female"], pitch, rate
+        return "en-US-AriaNeural", pitch, rate
+
+    # Archetype 3: Xiao Ya (Sweet, delicate, high melodious)
+    if "xiaoya" in vid or "xiao ya" in vnm or "mandarin" in vid or "温柔" in ins:
+        pitch = "+14Hz"
+        rate = "-3%"
+        if target_lang == "zh":
+            return "zh-CN-XiaoxiaoNeural", "+2Hz", "-2%"
+        elif target_lang == "en":
+            return "en-US-EmmaNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["female"], pitch, rate
+        return "zh-CN-XiaoxiaoNeural", pitch, rate
+
+    # Archetype 4: Swara (Native Indian expressive storyteller)
+    if "swara" in vid or "swara" in vnm:
+        pitch = "-2Hz"
+        rate = "-2%"
+        if target_lang == "hi":
+            return "hi-IN-SwaraNeural", pitch, rate
+        elif target_lang == "en":
+            return "en-IN-NeerjaExpressiveNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["female"], pitch, rate
+        return "hi-IN-SwaraNeural", pitch, rate
+
+    # Archetype 5: David (Deep baritone, authoritative, slow documentary cadence)
+    if "david" in vid or "david" in vnm or "narrator" in vid or ("deep" in ins and "baritone" in ins):
+        pitch = "-14Hz"
+        rate = "-8%"
+        if target_lang == "en":
+            return "en-US-ChristopherNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["male"], pitch, rate
+        return "en-US-ChristopherNeural", pitch, rate
+
+    # Archetype 6: Leo (Energetic, brisk, young tech host)
+    if "leo" in vid or "leo" in vnm or "host" in vid or "podcast" in ins:
+        pitch = "+6Hz"
+        rate = "+8%"
+        if target_lang == "en":
+            return "en-US-GuyNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["male"], pitch, rate
+        return "en-US-GuyNeural", pitch, rate
+
+    # Archetype 7: Kenji (Dramatic, intense anime protagonist)
+    if "kenji" in vid or "kenji" in vnm or "anime" in vid or "anime" in ins:
+        pitch = "+10Hz"
+        rate = "+6%"
+        if target_lang == "ja":
+            return "ja-JP-KeitaNeural", pitch, rate
+        elif target_lang == "en":
+            return "en-US-BrianNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["male"], pitch, rate
+        return "ja-JP-KeitaNeural", pitch, rate
+
+    # Archetype 8: Kabir (Deep, authoritative Indian news/documentary narrator)
+    if "kabir" in vid or "kabir" in vnm:
+        pitch = "-6Hz"
+        rate = "-4%"
+        if target_lang == "hi":
+            return "hi-IN-MadhurNeural", pitch, rate
+        elif target_lang == "en":
+            return "en-IN-PrabhatNeural", pitch, rate
+        elif target_lang in LANGUAGE_VOICE_MAP:
+            return LANGUAGE_VOICE_MAP[target_lang]["male"], pitch, rate
+        return "hi-IN-MadhurNeural", pitch, rate
+
+    # Dynamic custom voice instruction analysis (if custom user clone or prompt)
+    if "deep" in ins or "low" in ins:
+        pitch = "-10Hz"
+    elif "high" in ins or "sweet" in ins:
+        pitch = "+10Hz"
+        
+    if "fast" in ins or "rapid" in ins or "excited" in ins:
+        rate = "+10%"
+    elif "slow" in ins or "calm" in ins:
+        rate = "-8%"
+
+    # Fallback to Language Matrix
+    if target_lang in LANGUAGE_VOICE_MAP:
+        v_pair = LANGUAGE_VOICE_MAP[target_lang]
+        return (v_pair["female"] if is_female else v_pair["male"]), pitch, rate
+
+    if target_lang == "en":
+        return ("en-US-JennyNeural" if is_female else "en-US-ChristopherNeural"), pitch, rate
+
+    return ("en-US-JennyNeural" if is_female else "en-US-ChristopherNeural"), pitch, rate
 
 async def generate_neural_speech(
     text: str,
     control_instruction: Optional[str] = None,
     language: Optional[str] = None,
+    gender: Optional[str] = None,
+    voice_id: Optional[str] = None,
+    voice_name: Optional[str] = None,
     target_sr: int = 48000
 ) -> np.ndarray:
-    """Synthesizes human-grade natural speech and master-resamples to 48kHz studio audio."""
-    voice = pick_voice_from_instruction(control_instruction, language, text)
-    logger.info(f"Synthesizing with neural voice: {voice} (lang: {language}, text: '{text[:25]}...')")
+    """Synthesizes human-grade natural speech with unique persona prosody and master-resamples to 48kHz studio audio."""
+    voice, pitch, rate = pick_voice_from_instruction(
+        instruction=control_instruction,
+        language=language,
+        text=text,
+        gender=gender,
+        voice_id=voice_id,
+        voice_name=voice_name,
+    )
+    logger.info(f"Synthesizing with neural voice: {voice} (pitch: {pitch}, rate: {rate}, gender: {gender}, lang: {language})")
     
     temp_path = TEMP_DIR / f"speech_{uuid.uuid4().hex}.mp3"
     try:
         try:
-            communicate = edge_tts.Communicate(text, voice)
+            communicate = edge_tts.Communicate(text, voice, pitch=pitch, rate=rate)
             await communicate.save(str(temp_path))
         except Exception as primary_err:
             logger.warning(f"Voice {voice} failed: {primary_err}. Attempting auto-detected fallback...")
-            # Detect script and fallback to safe regional voice
+            # Detect script and fallback to safe regional voice preserving gender
             fallback_lang = detect_script_language(text) or "en"
-            fallback_voice = LANGUAGE_VOICE_MAP.get(fallback_lang, {}).get("female", "en-US-AriaNeural")
-            communicate = edge_tts.Communicate(text, fallback_voice)
+            is_female = (gender or "").lower() in ["female", "woman", "girl"] or "female" in (control_instruction or "").lower()
+            fallback_voice = LANGUAGE_VOICE_MAP.get(fallback_lang, {}).get("female" if is_female else "male", "en-US-AriaNeural")
+            communicate = edge_tts.Communicate(text, fallback_voice, pitch=pitch, rate=rate)
             await communicate.save(str(temp_path))
         
         data, sr = sf.read(str(temp_path))
@@ -333,13 +469,31 @@ def get_presets():
             "control_instruction": "年轻女性，声音温柔甜美，语速平缓自然，富有亲和力。",
             "avatar": "🌸",
             "tags": ["Chinese", "Gentle", "Female"]
+        },
+        {
+            "id": "swara_hindi",
+            "name": "Swara - Hindi Storyteller",
+            "gender": "Female",
+            "language": "hi",
+            "control_instruction": "एक मधुर और स्पष्ट भारतीय महिला की आवाज़, कहानियों और साक्षात्कारों के लिए उत्तम।",
+            "avatar": "🪷",
+            "tags": ["Hindi", "Storyteller", "Warm", "Female"]
+        },
+        {
+            "id": "kabir_hindi",
+            "name": "Kabir - Hindi Narrator",
+            "gender": "Male",
+            "language": "hi",
+            "control_instruction": "एक गंभीर और प्रभावशाली भारतीय पुरुष की आवाज़, वृत्तचित्र और समाचार के लिए उपयुक्त।",
+            "avatar": "🎙️",
+            "tags": ["Hindi", "Documentary", "Male", "Deep"]
         }
     ]
 
 @app.post("/v1/tts/generate")
 async def generate_speech(req: TTSGenerateRequest):
     start_time = time.time()
-    logger.info(f"Received TTS generation request: text='{req.text[:40]}...' mode={req.mode}")
+    logger.info(f"Received TTS generation request: text='{req.text[:40]}...' mode={req.mode} gender={req.gender}")
     
     sample_rate = 48000
     model = get_model()
@@ -369,10 +523,26 @@ async def generate_speech(req: TTSGenerateRequest):
             sample_rate = getattr(model.tts_model, "sample_rate", 48000)
         except Exception as e:
             logger.error(f"VoxCPM model generation error: {e}. Using high-fidelity neural speech.")
-            wav = await generate_neural_speech(req.text, req.control_instruction, language=req.language, target_sr=sample_rate)
+            wav = await generate_neural_speech(
+                text=req.text,
+                control_instruction=req.control_instruction,
+                language=req.language,
+                gender=req.gender,
+                voice_id=req.voice_id,
+                voice_name=req.voice_name,
+                target_sr=sample_rate
+            )
     else:
         # High-Fidelity 48kHz Neural Speech Engine
-        wav = await generate_neural_speech(req.text, req.control_instruction, language=req.language, target_sr=sample_rate)
+        wav = await generate_neural_speech(
+            text=req.text,
+            control_instruction=req.control_instruction,
+            language=req.language,
+            gender=req.gender,
+            voice_id=req.voice_id,
+            voice_name=req.voice_name,
+            target_sr=sample_rate
+        )
     
     # Save to in-memory WAV buffer
     buf = io.BytesIO()
