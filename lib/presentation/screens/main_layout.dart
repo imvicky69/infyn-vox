@@ -7,6 +7,8 @@ import '../../data/services/audio_service.dart';
 import '../../data/services/sidecar_service.dart';
 import '../widgets/custom_title_bar.dart';
 import '../widgets/studio_dock.dart';
+import '../widgets/update_dialog.dart';
+import '../../data/services/update_service.dart';
 import 'studio_screen.dart';
 import 'segmenter_screen.dart';
 import 'saved_files_screen.dart';
@@ -25,6 +27,7 @@ class _MainLayoutState extends State<MainLayout> {
   final TTSApiService _apiService = TTSApiService();
   final AudioService _audioService = AudioService();
   final SidecarService _sidecarService = SidecarService();
+  final UpdateService _updateService = UpdateService();
 
   final List<VoicePersona> _userPersonas = [];
   final List<GenerationResult> _savedResults = [];
@@ -41,6 +44,16 @@ class _MainLayoutState extends State<MainLayout> {
       }
     });
     _initEngineAndCheckStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForAppUpdate();
+    });
+  }
+
+  Future<void> _checkForAppUpdate() async {
+    final release = await _updateService.checkForUpdate();
+    if (mounted && release != null && release.isNewer) {
+      UpdateDialog.show(context, releaseInfo: release, isForced: true);
+    }
   }
 
   @override

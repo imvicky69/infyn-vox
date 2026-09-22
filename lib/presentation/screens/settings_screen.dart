@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/services/tts_api_service.dart';
 import '../../data/services/sidecar_service.dart';
+import '../../data/services/update_service.dart';
+import '../widgets/update_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   final TTSApiService apiService;
@@ -24,7 +26,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _apiKeyController;
   Map<String, dynamic>? _healthData;
   Map<String, dynamic>? _modelData;
+  final UpdateService _updateService = UpdateService();
   bool _isChecking = false;
+  bool _isCheckingUpdate = false;
 
   @override
   void initState() {
@@ -68,6 +72,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Text("Server configuration updated successfully.", style: TextStyle(color: AppTheme.text(context))),
       ),
     );
+  }
+
+  Future<void> _checkManualUpdate() async {
+    setState(() => _isCheckingUpdate = true);
+    final release = await _updateService.checkForUpdate();
+    if (!mounted) return;
+    setState(() => _isCheckingUpdate = false);
+
+    if (release != null && release.isNewer) {
+      UpdateDialog.show(context, releaseInfo: release, isForced: false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppTheme.cardLight(context),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, size: 16, color: AppTheme.success),
+              const SizedBox(width: 8),
+              Text(
+                "infyn Vox is up to date (v${UpdateService.currentAppVersion}).",
+                style: TextStyle(color: AppTheme.text(context)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -387,6 +418,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     },
                   ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Application Updates & GitHub Releases Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.cardBg(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.system_update_alt_outlined, color: AppTheme.primary, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Application Updates & GitHub Releases",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.text(context)),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardLight(context),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppTheme.border(context)),
+                      ),
+                      child: Text(
+                        "v${UpdateService.currentAppVersion}",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "infyn Vox checks GitHub Releases (imvicky69/infyn-vox) automatically on launch to keep your neural voice engine, UI, and audio models up to date.",
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSub(context)),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _isCheckingUpdate ? null : _checkManualUpdate,
+                      icon: _isCheckingUpdate
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.refresh, size: 16),
+                      label: Text(_isCheckingUpdate ? "Checking Releases..." : "Check for Updates"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => UpdateService.openReleaseUrl(
+                        "https://github.com/imvicky69/infyn-vox/releases",
+                      ),
+                      icon: const Icon(Icons.open_in_new, size: 14),
+                      label: const Text("View on GitHub"),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.text(context),
+                        side: BorderSide(color: AppTheme.border(context)),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

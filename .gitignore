@@ -34,6 +34,7 @@ env/
 *.srt
 temp_audio/
 *.temp
+dist/
 
 # IntelliJ related
 *.iml
